@@ -2,9 +2,5 @@
 __pycache__/
 *.pyc
 data/raw/
-checkpoints/*.pt
-checkpoints/*.log.json
 results/figures/*.png
 *.egg-info/
-data/LOL/
-results/train_all.log

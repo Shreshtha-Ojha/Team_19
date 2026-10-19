@@ -1,10 +1,9 @@
 """Generate a side-by-side comparison figure for a few test images:
-low-light input | classical baselines | trained checkpoints | ground truth.
+low-light input | classical methods | ground truth.
 
 Usage example:
     python src/make_figure.py \
         --low-dir data/raw/LOL/eval15/low --high-dir data/raw/LOL/eval15/high \
-        --checkpoints checkpoints/unet_standard_full.pt checkpoints/unet_copyblend_full.pt \
         --num-images 4 --out results/figures/comparison.png
 """
 import argparse
@@ -13,14 +12,12 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 
 from classical.clahe import clahe_enhance
 from classical.gamma import gamma_correct
 from classical.hist_eq import hist_eq
 from classical.retinex import multi_scale_retinex, single_scale_retinex
 from data.lol_dataset import list_images
-from evaluate import load_checkpoint_model
 
 CLASSICAL_METHODS = {
     "gamma": lambda img: gamma_correct(img, 2.2),
@@ -31,19 +28,11 @@ CLASSICAL_METHODS = {
 }
 
 
-def run_unet(model, low_bgr, device):
-    low_rgb = cv2.cvtColor(low_bgr, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-    t = torch.from_numpy(low_rgb.transpose(2, 0, 1)).unsqueeze(0).to(device)
-    with torch.no_grad():
-        pred = model(t).squeeze(0).cpu().numpy().transpose(1, 2, 0)
-    return np.clip(pred * 255.0, 0, 255).astype(np.uint8)
-
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--low-dir", required=True)
     ap.add_argument("--high-dir", required=True)
-    ap.add_argument("--checkpoints", nargs="*", default=[])
     ap.add_argument("--num-images", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="results/figures/comparison.png")
@@ -55,15 +44,7 @@ def main():
     rng = np.random.default_rng(args.seed)
     chosen = rng.choice(low_files, size=min(args.num_images, len(low_files)), replace=False)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    models = {}
-    for ckpt_path in args.checkpoints:
-        ckpt_path = Path(ckpt_path)
-        model, _ = load_checkpoint_model(ckpt_path)
-        model.to(device)
-        models[ckpt_path.stem] = model
-
-    col_names = ["low (input)"] + list(CLASSICAL_METHODS.keys()) + list(models.keys()) + ["high (ground truth)"]
+    col_names = ["low (input)"] + list(CLASSICAL_METHODS.keys()) + ["high (ground truth)"]
     n_rows = len(chosen)
     n_cols = len(col_names)
 
@@ -79,8 +60,6 @@ def main():
         images = [cv2.cvtColor(low_bgr, cv2.COLOR_BGR2RGB)]
         for fn in CLASSICAL_METHODS.values():
             images.append(cv2.cvtColor(fn(low_bgr), cv2.COLOR_BGR2RGB))
-        for model in models.values():
-            images.append(run_unet(model, low_bgr, device))  # already RGB
         images.append(cv2.cvtColor(high_bgr, cv2.COLOR_BGR2RGB))
 
         for col, (img, name) in enumerate(zip(images, col_names)):

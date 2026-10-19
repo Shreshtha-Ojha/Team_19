@@ -24,13 +24,13 @@ Unzip the archive and place its contents under:
 data/raw/LOL/
 ```
 
-so that whatever top-level folder(s) the archive contains end up directly
-inside `data/raw/LOL/`. **Do not rename or restructure anything yet** — once
-it's there, tell me and I will inspect the actual folder/file names and write
-the loader to match them exactly (the reference RetinexNet repo expects
-`our485/` for the 485 real training pairs and `syn/` for synthetic pairs, but
-I have not verified the exact low/high subfolder naming inside the archive
-itself, so I will check it directly rather than assume).
+so that it looks like this (the layout verified on the real archive):
+
+```
+data/raw/LOL/lol_dataset/
+├── our485/{low,high}/   # 485 pairs — used for tuning pipeline parameters
+└── eval15/{low,high}/   # 15 pairs  — test set for reported metrics
+```
 
 ## Verification
 
@@ -45,4 +45,4 @@ This will report, without assuming anything about internal naming:
 - whether low-light and normal-light images pair up 1:1 by filename
 - image dimensions and any mismatches
 
-Training/evaluation will not proceed until this passes.
+Evaluation will not proceed until this passes.
