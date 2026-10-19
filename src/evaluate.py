@@ -1,4 +1,8 @@
-"""Evaluate classical enhancement methods on a paired test set.
+"""Evaluate classical enhancement methods and the full pipeline on a paired test set.
+
+Besides the single-operation baselines, the pipeline is scored cumulatively:
+stages 1-2 only, then + denoise, + contrast, + colour (the default
+pipeline), and finally + sharpen, so the summary shows what each stage adds.
 
 PSNR/SSIM computed with scikit-image (skimage.metrics), on uint8 [0,255]
 RGB images. Writes one row per method with per-image and averaged metrics
@@ -22,8 +26,11 @@ from skimage.metrics import structural_similarity as ssim
 from classical.clahe import clahe_enhance
 from classical.gamma import gamma_correct
 from classical.hist_eq import hist_eq
+from classical.homomorphic import homomorphic_filter
 from classical.retinex import multi_scale_retinex, single_scale_retinex
 from data.lol_dataset import load_pairs
+from pipeline.pipeline import STAGE_NAMES, enhance
+from pipeline.stages import PipelineParams
 
 CLASSICAL_METHODS = {
     "gamma": lambda img: gamma_correct(img, 2.2),
@@ -31,7 +38,23 @@ CLASSICAL_METHODS = {
     "clahe": clahe_enhance,
     "ssr": single_scale_retinex,
     "msr": multi_scale_retinex,
+    "homomorphic": homomorphic_filter,
 }
+
+
+def pipeline_up_to(k: int):
+    enabled = set(STAGE_NAMES[:k])
+    return lambda img: enhance(img, enabled=enabled, keep_steps=False).final
+
+
+# Cumulative ablation: "pipeline_2_brighten" = stages 1-2, ..., "pipeline_5_colour" =
+# the default pipeline. Sharpening is off by default, so its row uses an explicit
+# amount (0.4) to show its effect.
+PIPELINE_METHODS = {
+    f"pipeline_{k}_{STAGE_NAMES[k - 1]}": pipeline_up_to(k) for k in range(2, len(STAGE_NAMES))
+}
+PIPELINE_METHODS["pipeline_6_sharpen_0.4"] = lambda img: enhance(
+    img, PipelineParams(sharpen_amount=0.4), set(STAGE_NAMES), keep_steps=False).final
 
 
 def eval_classical(pairs, method_name, fn):
@@ -59,7 +82,7 @@ def main():
     print(f"test pairs: {len(pairs)}")
 
     all_rows = []
-    for name, fn in CLASSICAL_METHODS.items():
+    for name, fn in {**CLASSICAL_METHODS, **PIPELINE_METHODS}.items():
         print(f"evaluating method: {name}")
         all_rows.extend(eval_classical(pairs, name, fn))
 

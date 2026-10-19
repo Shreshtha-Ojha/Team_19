@@ -1,5 +1,5 @@
 """Generate a side-by-side comparison figure for a few test images:
-low-light input | classical methods | ground truth.
+low-light input | classical methods | full pipeline | ground truth.
 
 Usage example:
     python src/make_figure.py \
@@ -16,8 +16,10 @@ import numpy as np
 from classical.clahe import clahe_enhance
 from classical.gamma import gamma_correct
 from classical.hist_eq import hist_eq
+from classical.homomorphic import homomorphic_filter
 from classical.retinex import multi_scale_retinex, single_scale_retinex
 from data.lol_dataset import list_images
+from pipeline.pipeline import enhance
 
 CLASSICAL_METHODS = {
     "gamma": lambda img: gamma_correct(img, 2.2),
@@ -25,6 +27,8 @@ CLASSICAL_METHODS = {
     "clahe": clahe_enhance,
     "ssr": single_scale_retinex,
     "msr": multi_scale_retinex,
+    "homomorphic": homomorphic_filter,
+    "pipeline (ours)": lambda img: enhance(img, keep_steps=False).final,
 }
 
 

@@ -1,0 +1,75 @@
+{
+  "params": {
+    "guide_radius": 30,
+    "guide_eps": 0.001,
+    "target_brightness": 0.4,
+    "illum_floor": 0.02,
+    "denoise_strength": 1.5,
+    "denoise_dark_power": 1.0,
+    "clahe_clip": 0.75,
+    "clahe_tiles": 8,
+    "white_balance_strength": 0.5,
+    "saturation": 0.9,
+    "sharpen_amount": 0.0,
+    "sharpen_sigma": 1.5
+  },
+  "per_stage": [
+    {
+      "stages": [
+        "estimate_illumination",
+        "brighten"
+      ],
+      "chosen": {
+        "guide_radius": 30,
+        "guide_eps": 0.001,
+        "target_brightness": 0.4
+      },
+      "train_psnr": 15.718095418735173,
+      "train_ssim": 0.488345883623342
+    },
+    {
+      "stages": [
+        "denoise"
+      ],
+      "chosen": {
+        "denoise_strength": 1.5,
+        "denoise_dark_power": 1.0
+      },
+      "train_psnr": 16.374082112684892,
+      "train_ssim": 0.7366697647989814
+    },
+    {
+      "stages": [
+        "local_contrast"
+      ],
+      "chosen": {
+        "clahe_clip": 0.75
+      },
+      "train_psnr": 16.507030065589646,
+      "train_ssim": 0.7384265698569703
+    },
+    {
+      "stages": [
+        "colour_correct"
+      ],
+      "chosen": {
+        "white_balance_strength": 0.5,
+        "saturation": 0.9
+      },
+      "train_psnr": 17.19031871680266,
+      "train_ssim": 0.7506425757328116
+    },
+    {
+      "stages": [
+        "sharpen"
+      ],
+      "chosen": {
+        "sharpen_amount": 0.0
+      },
+      "train_psnr": 17.19031871680266,
+      "train_ssim": 0.7506425757328116
+    }
+  ],
+  "num_images": 100,
+  "seed": 0
+}

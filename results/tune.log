@@ -1,0 +1,86 @@
+tuning on 100 images from ../data/raw/LOL/lol_dataset/our485/low
+  {'guide_radius': 5, 'guide_eps': 0.001, 'target_brightness': 0.35}  psnr=14.96 ssim=0.488 score=19.84
+  {'guide_radius': 5, 'guide_eps': 0.001, 'target_brightness': 0.4}  psnr=15.48 ssim=0.469 score=20.17
+  {'guide_radius': 5, 'guide_eps': 0.001, 'target_brightness': 0.45}  psnr=15.54 ssim=0.444 score=19.99
+  {'guide_radius': 5, 'guide_eps': 0.001, 'target_brightness': 0.5}  psnr=15.27 ssim=0.419 score=19.46
+  {'guide_radius': 5, 'guide_eps': 0.001, 'target_brightness': 0.55}  psnr=14.72 ssim=0.395 score=18.66
+  {'guide_radius': 5, 'guide_eps': 0.01, 'target_brightness': 0.35}  psnr=14.90 ssim=0.483 score=19.73
+  {'guide_radius': 5, 'guide_eps': 0.01, 'target_brightness': 0.4}  psnr=15.37 ssim=0.461 score=19.98
+  {'guide_radius': 5, 'guide_eps': 0.01, 'target_brightness': 0.45}  psnr=15.40 ssim=0.435 score=19.75
+  {'guide_radius': 5, 'guide_eps': 0.01, 'target_brightness': 0.5}  psnr=15.10 ssim=0.409 score=19.19
+  {'guide_radius': 5, 'guide_eps': 0.01, 'target_brightness': 0.55}  psnr=14.54 ssim=0.384 score=18.38
+  {'guide_radius': 15, 'guide_eps': 0.001, 'target_brightness': 0.35}  psnr=15.04 ssim=0.499 score=20.03
+  {'guide_radius': 15, 'guide_eps': 0.001, 'target_brightness': 0.4}  psnr=15.59 ssim=0.481 score=20.40
+  {'guide_radius': 15, 'guide_eps': 0.001, 'target_brightness': 0.45}  psnr=15.66 ssim=0.458 score=20.24
+  {'guide_radius': 15, 'guide_eps': 0.001, 'target_brightness': 0.5}  psnr=15.40 ssim=0.433 score=19.73
+  {'guide_radius': 15, 'guide_eps': 0.001, 'target_brightness': 0.55}  psnr=14.85 ssim=0.409 score=18.94
+  {'guide_radius': 15, 'guide_eps': 0.01, 'target_brightness': 0.35}  psnr=14.97 ssim=0.492 score=19.89
+  {'guide_radius': 15, 'guide_eps': 0.01, 'target_brightness': 0.4}  psnr=15.44 ssim=0.472 score=20.15
+  {'guide_radius': 15, 'guide_eps': 0.01, 'target_brightness': 0.45}  psnr=15.45 ssim=0.448 score=19.93
+  {'guide_radius': 15, 'guide_eps': 0.01, 'target_brightness': 0.5}  psnr=15.16 ssim=0.423 score=19.39
+  {'guide_radius': 15, 'guide_eps': 0.01, 'target_brightness': 0.55}  psnr=14.60 ssim=0.399 score=18.59
+  {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.35}  psnr=15.14 ssim=0.505 score=20.19
+  {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.4}  psnr=15.72 ssim=0.488 score=20.60
+  {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.45}  psnr=15.81 ssim=0.466 score=20.46
+  {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.5}  psnr=15.56 ssim=0.442 score=19.98
+  {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.55}  psnr=15.01 ssim=0.418 score=19.19
+  {'guide_radius': 30, 'guide_eps': 0.01, 'target_brightness': 0.35}  psnr=15.08 ssim=0.497 score=20.04
+  {'guide_radius': 30, 'guide_eps': 0.01, 'target_brightness': 0.4}  psnr=15.55 ssim=0.479 score=20.34
+  {'guide_radius': 30, 'guide_eps': 0.01, 'target_brightness': 0.45}  psnr=15.57 ssim=0.456 score=20.13
+  {'guide_radius': 30, 'guide_eps': 0.01, 'target_brightness': 0.5}  psnr=15.28 ssim=0.432 score=19.60
+  {'guide_radius': 30, 'guide_eps': 0.01, 'target_brightness': 0.55}  psnr=14.71 ssim=0.410 score=18.81
+stage ['estimate_illumination', 'brighten'] -> {'guide_radius': 30, 'guide_eps': 0.001, 'target_brightness': 0.4}  psnr=15.72 ssim=0.488
+
+  {'denoise_strength': 1.0, 'denoise_dark_power': 0.0}  psnr=16.27 ssim=0.722 score=23.49
+  {'denoise_strength': 1.0, 'denoise_dark_power': 0.5}  psnr=16.28 ssim=0.724 score=23.52
+  {'denoise_strength': 1.0, 'denoise_dark_power': 1.0}  psnr=16.29 ssim=0.724 score=23.53
+  {'denoise_strength': 1.5, 'denoise_dark_power': 0.0}  psnr=16.34 ssim=0.728 score=23.62
+  {'denoise_strength': 1.5, 'denoise_dark_power': 0.5}  psnr=16.36 ssim=0.734 score=23.69
+  {'denoise_strength': 1.5, 'denoise_dark_power': 1.0}  psnr=16.37 ssim=0.737 score=23.74
+  {'denoise_strength': 2.0, 'denoise_dark_power': 0.0}  psnr=16.32 ssim=0.719 score=23.51
+  {'denoise_strength': 2.0, 'denoise_dark_power': 0.5}  psnr=16.35 ssim=0.727 score=23.62
+  {'denoise_strength': 2.0, 'denoise_dark_power': 1.0}  psnr=16.38 ssim=0.732 score=23.70
+  {'denoise_strength': 2.5, 'denoise_dark_power': 0.0}  psnr=16.29 ssim=0.706 score=23.34
+  {'denoise_strength': 2.5, 'denoise_dark_power': 0.5}  psnr=16.32 ssim=0.715 score=23.48
+  {'denoise_strength': 2.5, 'denoise_dark_power': 1.0}  psnr=16.36 ssim=0.723 score=23.58
+  {'denoise_strength': 3.0, 'denoise_dark_power': 0.0}  psnr=16.24 ssim=0.692 score=23.16
+  {'denoise_strength': 3.0, 'denoise_dark_power': 0.5}  psnr=16.28 ssim=0.703 score=23.32
+  {'denoise_strength': 3.0, 'denoise_dark_power': 1.0}  psnr=16.32 ssim=0.712 score=23.44
+stage ['denoise'] -> {'denoise_strength': 1.5, 'denoise_dark_power': 1.0}  psnr=16.37 ssim=0.737
+
+  {'clahe_clip': 0.75}  psnr=16.51 ssim=0.738 score=23.89
+  {'clahe_clip': 1.0}  psnr=16.34 ssim=0.731 score=23.65
+  {'clahe_clip': 1.25}  psnr=16.14 ssim=0.722 score=23.37
+  {'clahe_clip': 1.5}  psnr=15.99 ssim=0.715 score=23.14
+  {'clahe_clip': 2.0}  psnr=15.61 ssim=0.694 score=22.54
+stage ['local_contrast'] -> {'clahe_clip': 0.75}  psnr=16.51 ssim=0.738
+
+  {'white_balance_strength': 0.0, 'saturation': 0.9}  psnr=16.76 ssim=0.747 score=24.23
+  {'white_balance_strength': 0.0, 'saturation': 1.0}  psnr=16.51 ssim=0.738 score=23.89
+  {'white_balance_strength': 0.0, 'saturation': 1.1}  psnr=16.21 ssim=0.725 score=23.46
+  {'white_balance_strength': 0.0, 'saturation': 1.2}  psnr=15.89 ssim=0.710 score=22.99
+  {'white_balance_strength': 0.25, 'saturation': 0.9}  psnr=17.05 ssim=0.750 score=24.54
+  {'white_balance_strength': 0.25, 'saturation': 1.0}  psnr=16.84 ssim=0.743 score=24.27
+  {'white_balance_strength': 0.25, 'saturation': 1.1}  psnr=16.58 ssim=0.732 score=23.91
+  {'white_balance_strength': 0.25, 'saturation': 1.2}  psnr=16.31 ssim=0.719 score=23.50
+  {'white_balance_strength': 0.5, 'saturation': 0.9}  psnr=17.19 ssim=0.751 score=24.70
+  {'white_balance_strength': 0.5, 'saturation': 1.0}  psnr=17.02 ssim=0.745 score=24.48
+  {'white_balance_strength': 0.5, 'saturation': 1.1}  psnr=16.81 ssim=0.737 score=24.18
+  {'white_balance_strength': 0.5, 'saturation': 1.2}  psnr=16.57 ssim=0.726 score=23.83
+  {'white_balance_strength': 0.75, 'saturation': 0.9}  psnr=17.16 ssim=0.750 score=24.66
+  {'white_balance_strength': 0.75, 'saturation': 1.0}  psnr=17.02 ssim=0.745 score=24.47
+  {'white_balance_strength': 0.75, 'saturation': 1.1}  psnr=16.83 ssim=0.738 score=24.21
+  {'white_balance_strength': 0.75, 'saturation': 1.2}  psnr=16.62 ssim=0.728 score=23.90
+  {'white_balance_strength': 1.0, 'saturation': 0.9}  psnr=16.98 ssim=0.748 score=24.46
+  {'white_balance_strength': 1.0, 'saturation': 1.0}  psnr=16.84 ssim=0.744 score=24.27
+  {'white_balance_strength': 1.0, 'saturation': 1.1}  psnr=16.65 ssim=0.737 score=24.02
+  {'white_balance_strength': 1.0, 'saturation': 1.2}  psnr=16.44 ssim=0.728 score=23.72
+stage ['colour_correct'] -> {'white_balance_strength': 0.5, 'saturation': 0.9}  psnr=17.19 ssim=0.751
+
+  {'sharpen_amount': 0.0}  psnr=17.19 ssim=0.751 score=24.70
+  {'sharpen_amount': 0.2}  psnr=17.06 ssim=0.739 score=24.46
+  {'sharpen_amount': 0.4}  psnr=16.93 ssim=0.726 score=24.19
+  {'sharpen_amount': 0.6}  psnr=16.78 ssim=0.712 score=23.90
+stage ['sharpen'] -> {'sharpen_amount': 0.0}  psnr=17.19 ssim=0.751
+
+tuned params -> ../results/tuned_params.json

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Low-Light Enhancer</title>
+<meta name="description" content="Turn a dark photo into a clear one, step by step, using classical image processing.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='7' fill='%23f5b94a'/></svg>">
+<style>
+  :root {
+    --bg: #0b0d14;
+    --bg-2: #121522;
+    --card: #161a2a;
+    --line: #262b40;
+    --text: #eef0f7;
+    --muted: #9aa1b8;
+    --accent: #f5b94a;
+    --accent-2: #ffd98a;
+    --accent-ink: #1a1305;
+    --danger: #ff7b7b;
+    --radius: 18px;
+    --shadow: 0 20px 60px rgba(0, 0, 0, .45);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 50% -200px, rgba(245, 185, 74, .14), transparent 70%),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 0 16px 80px; }
+  img { display: block; max-width: 100%; }
+  button, .btn { font: inherit; }
+
+  header { text-align: center; padding: 56px 0 28px; }
+  .mark {
+    width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, var(--accent-2), var(--accent) 45%, rgba(245,185,74,0) 72%);
+    box-shadow: 0 0 60px rgba(245, 185, 74, .55);
+  }
+  h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.1; margin: 0 0 12px; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: clamp(16px, 2.6vw, 19px); margin: 0 auto; max-width: 560px; }
+
+  /* ---------- upload ---------- */
+  .drop {
+    background: var(--card); border: 1.5px dashed var(--line); border-radius: var(--radius);
+    padding: 36px 20px; text-align: center; transition: border-color .2s, background .2s;
+  }
+  .drop.over { border-color: var(--accent); background: #1b1f33; }
+  .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--bg-2); color: var(--text);
+    padding: 13px 22px; border-radius: 999px; font-weight: 600; text-decoration: none;
+    transition: transform .15s, background .2s, border-color .2s;
+  }
+  .btn:hover { border-color: #3a4160; }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { background: var(--accent-2); }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .hint { color: var(--muted); font-size: 14px; margin: 16px 0 0; }
+  .samples { margin-top: 28px; }
+  .samples p { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+  .samples .row { display: flex; gap: 10px; justify-content: center; }
+  .sample {
+    padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    cursor: pointer; background: none; width: 96px; aspect-ratio: 3 / 2; transition: border-color .2s, transform .15s;
+  }
+  .sample:hover { border-color: var(--accent); }
+  .sample:active { transform: scale(.96); }
+  .sample img { width: 100%; height: 100%; object-fit: cover; }
+  input[type=file] { display: none; }
+
+  /* ---------- loading ---------- */
+  .loading { text-align: center; padding: 60px 0; color: var(--muted); }
+  .spinner {
+    width: 46px; height: 46px; margin: 0 auto 18px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error { color: var(--danger); text-align: center; margin: 18px 0 0; }
+
+  /* ---------- steps ---------- */
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 44px 0 18px; }
+  .section-head h2 { font-size: 24px; margin: 0; letter-spacing: -.01em; }
+  .link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 4px 0; font-weight: 600; }
+  .steps { display: grid; gap: 18px; position: relative; }
+  .step {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+    display: grid; grid-template-columns: 1.35fr 1fr; align-items: center;
+    opacity: 0; transform: translateY(18px); transition: opacity .55s ease, transform .55s ease;
+  }
+  .step.shown { opacity: 1; transform: none; }
+  .step img { width: 100%; height: 100%; object-fit: cover; background: #000; }
+  .step .txt { padding: 22px 24px; }
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .step h3 { margin: 0 0 8px; font-size: 20px; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* ---------- before / after ---------- */
+  .compare {
+    position: relative; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    border: 1px solid var(--line); user-select: none; -webkit-user-select: none; touch-action: pan-y;
+    background: #000;
+  }
+  .compare img { width: 100%; pointer-events: none; }
+  .compare .before { position: absolute; inset: 0; height: 100%; object-fit: cover; clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  .compare .handle {
+    position: absolute; top: 0; bottom: 0; left: var(--pos); width: 2px; margin-left: -1px;
+    background: #fff; box-shadow: 0 0 12px rgba(0,0,0,.6); pointer-events: none;
+  }
+  .compare .handle::after {
+    content: ""; position: absolute; top: 50%; left: 50%; width: 42px; height: 42px; margin: -21px 0 0 -21px;
+    border-radius: 50%; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,.45);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l-6 6 6 6M15 6l6 6-6 6'/%3E%3C/svg%3E");
+    background-size: 22px; background-repeat: no-repeat; background-position: center;
+  }
+  .compare input[type=range] {
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize;
+  }
+  .tag {
+    position: absolute; top: 14px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 700;
+    background: rgba(0,0,0,.55); color: #fff; backdrop-filter: blur(6px); pointer-events: none;
+  }
+  .tag.l { left: 14px; } .tag.r { right: 14px; }
+  .final-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center; }
+  .meta { color: var(--muted); font-size: 14px; margin-left: auto; }
+
+  .hidden { display: none !important; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 16px 30px; }
+
+  @media (max-width: 680px) {
+    header { padding: 36px 0 22px; }
+    .step { grid-template-columns: 1fr; }
+    .step .txt { padding: 16px 18px 20px; }
+    .meta { margin-left: 0; width: 100%; }
+    .btn { flex: 1 1 auto; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .step { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark" aria-hidden="true"></div>
+    <h1>Bring dark photos to light</h1>
+    <p class="lede">Take or upload a photo shot in poor light and watch it get enhanced, one step at a time.</p>
+  </header>
+
+  <section id="start">
+    <div class="drop" id="drop">
+      <div class="actions">
+        <label class="btn primary" for="camera">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>
+          Take a photo
+        </label>
+        <label class="btn" for="gallery">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg>
+          Upload a photo
+        </label>
+      </div>
+      <input type="file" id="camera" accept="image/*" capture="environment">
+      <input type="file" id="gallery" accept="image/*">
+      <p class="hint">On a computer you can also drag a photo here.</p>
+      <div class="samples">
+        <p>No dark photo handy? Try one of these:</p>
+        <div class="row">
+          <button class="sample" data-src="/static/samples/1.jpg" aria-label="Sample: bookshelf"><img src="/static/samples/1.jpg" alt=""></button>
+          <button class="sample" data-src="/static/samples/2.jpg" aria-label="Sample: kitchen corner"><img src="/static/samples/2.jpg" alt=""></button>
+          <button class="sample" data-src="/static/samples/3.jpg" aria-label="Sample: wardrobe"><img src="/static/samples/3.jpg" alt=""></button>
+        </div>
+      </div>
+    </div>
+    <p class="error hidden" id="error" role="alert"></p>
+  </section>
+
+  <section id="loading" class="loading hidden" aria-live="polite">
+    <div class="spinner"></div>
+    Enhancing your photo&hellip; this usually takes a couple of seconds.
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="section-head">
+      <h2>Step by step</h2>
+      <button class="link" id="skip">Skip to result &darr;</button>
+    </div>
+    <div class="steps" id="steps"></div>
+
+    <div class="section-head" id="final-head">
+      <h2>Before &amp; after</h2>
+    </div>
+    <div class="compare" id="compare" style="--pos: 50%">
+      <img id="after" alt="Enhanced photo">
+      <img id="before" class="before" alt="Original photo">
+      <div class="handle"></div>
+      <span class="tag l">Before</span>
+      <span class="tag r">After</span>
+      <input type="range" min="0" max="100" value="50" step="0.1" id="slider" aria-label="Drag to compare before and after">
+    </div>
+    <div class="final-actions">
+      <a class="btn primary" id="download" download="enhanced.jpg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        Download
+      </a>
+      <button class="btn" id="again">Try another photo</button>
+      <span class="meta" id="meta"></span>
+    </div>
+  </section>
+</main>
+<footer>Classical image processing only &mdash; no AI, no training data.</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const STEP_DELAY = 900; // ms between step cards appearing
+let revealTimers = [];
+
+function show(section) {
+  for (const id of ["start", "loading", "results"]) $(id).classList.toggle("hidden", id !== section);
+}
+
+function showError(msg) {
+  show("start");
+  $("error").textContent = msg;
+  $("error").classList.remove("hidden");
+}
+
+async function enhance(blob, filename) {
+  $("error").classList.add("hidden");
+  show("loading");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  const form = new FormData();
+  form.append("file", blob, filename || "photo.jpg");
+  let data;
+  try {
+    const res = await fetch("/api/enhance", { method: "POST", body: form });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `Server error (${res.status})`);
+  } catch (e) {
+    showError(e.message === "Failed to fetch" ? "Couldn't reach the server. Is it still running?" : e.message);
+    return;
+  }
+  render(data);
+}
+
+function card(badge, title, text, src) {
+  const el = document.createElement("article");
+  el.className = "step";
+  el.innerHTML = `<img alt=""><div class="txt"><span class="badge"></span><h3></h3><p></p></div>`;
+  el.querySelector("img").src = src;
+  el.querySelector("img").alt = title;
+  el.querySelector(".badge").textContent = badge;
+  el.querySelector("h3").textContent = title;
+  el.querySelector("p").textContent = text;
+  return el;
+}
+
+function render(data) {
+  revealTimers.forEach(clearTimeout);
+  revealTimers = [];
+  const steps = $("steps");
+  steps.replaceChildren(card("Start", "Your photo", "The original, straight from the camera.", data.input));
+  data.steps.forEach((s, i) =>
+    steps.append(card(`Step ${i + 1} of ${data.steps.length}`, s.title, s.explain, s.image)));
+
+  $("after").src = data.final;
+  $("before").src = data.input;
+  $("download").href = data.final;
+  $("meta").textContent = `${data.width}×${data.height} · enhanced in ${data.seconds}s`;
+  setPos(50);
+  show("results");
+
+  const cards = [...steps.children];
+  cards.forEach((c, i) => revealTimers.push(setTimeout(() => {
+    c.classList.add("shown");
+    if (i > 0) c.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, 150 + i * STEP_DELAY)));
+  revealTimers.push(setTimeout(() =>
+    $("final-head").scrollIntoView({ behavior: "smooth", block: "start" }),
+    150 + cards.length * STEP_DELAY + 300));
+}
+
+function setPos(v) {
+  $("compare").style.setProperty("--pos", v + "%");
+  $("slider").value = v;
+}
+$("slider").addEventListener("input", (e) => setPos(e.target.value));
+
+$("skip").addEventListener("click", () => {
+  revealTimers.forEach(clearTimeout);
+  document.querySelectorAll(".step").forEach((c) => c.classList.add("shown"));
+  $("final-head").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+$("again").addEventListener("click", () => {
+  revealTimers.forEach(clearTimeout);
+  show("start");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+for (const id of ["camera", "gallery"]) {
+  $(id).addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (f) enhance(f, f.name);
+    e.target.value = "";
+  });
+}
+
+document.querySelectorAll(".sample").forEach((b) => b.addEventListener("click", async () => {
+  const res = await fetch(b.dataset.src);
+  enhance(await res.blob(), "sample.jpg");
+}));
+
+const drop = $("drop");
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => {
+  const f = [...e.dataTransfer.files].find((f) => f.type.startsWith("image/"));
+  if (f) enhance(f, f.name); else showError("Please drop an image file.");
+});
+</script>
+</body>
+</html>
