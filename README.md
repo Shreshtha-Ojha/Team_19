@@ -1,195 +1,226 @@
-# Low-Light Image Enhancement with Classical Image Processing
+# Low-Light Image Enhancement
 
-College project for Image Processing & Computer Vision. Takes a dark photo
-and produces an enhanced one using only classical techniques — no deep
-learning, no training. Every step is a standard, explainable operation:
-Retinex theory, point transforms, spatial filtering, histogram processing
-and colour-space conversions.
+Turn a dark photo into a clear one using **classical image processing only**:
+no AI, no neural networks, no training. Every step is a standard operation
+from an image processing course (Retinex, gamma correction, filtering,
+histogram equalization, colour spaces, Wiener deconvolution) and can be
+explained on paper.
 
-It comes with a **web demo**: take or upload a photo on your phone and watch
-it get enhanced step by step, ending in a before/after slider. You can then
-drag a box around a detail such as a number plate to enlarge and sharpen it,
-with optional **motion deblurring**.
+It comes with a **web app**. Take or upload a photo, watch it get enhanced
+step by step, compare before and after with a slider, then zoom into a detail
+such as a number plate to enlarge it, sharpen it and undo motion blur.
 
-![Comparison on the LOL test set](results/figures/comparison.png)
+![Comparison with single-step methods](results/figures/comparison.png)
 
-## The pipeline
+---
 
-`src/pipeline/stages.py` — each stage is a function `stage(img, info, params) -> img`.
+## Run it locally
 
-| # | Stage | What it does | Syllabus topic |
+### 1. Install
+
+You need **Python 3.12** (what it was tested on) and git.
+
+```bash
+git clone https://github.com/Shreshtha-Ojha/lowlight-enhancement.git
+cd lowlight-enhancement
+python3 -m venv .venv
+source .venv/bin/activate          # Windows (PowerShell): .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+### 2. Start the web app
+
+```bash
+cd src
+uvicorn web.server:app --host 0.0.0.0 --port 8000
+```
+
+Open **http://localhost:8000** and use *Take a photo*, *Upload a photo*, or
+one of the sample images. Stop the server with `Ctrl+C`.
+
+**Opening it on your phone:** connect the phone to the same Wi-Fi and open
+`http://<your-computer's-IP>:8000`. Find the IP with `ipconfig` on Windows,
+or `ip addr` / `ifconfig` on Linux and macOS. If it doesn't load, allow port
+8000 through the firewall.
+
+<details>
+<summary>Running inside WSL on Windows?</summary>
+
+The phone can't reach WSL directly, so forward the port from Windows. In an
+**administrator** PowerShell:
+
+```powershell
+$wsl = (wsl hostname -I).Trim().Split(" ")[0]
+netsh interface portproxy add v4tov4 listenport=8000 listenaddress=0.0.0.0 connectport=8000 connectaddress=$wsl
+New-NetFirewallRule -DisplayName "lowlight-demo" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
+```
+
+Then use the **Windows** IP address from `ipconfig`. To undo:
+`netsh interface portproxy delete v4tov4 listenport=8000 listenaddress=0.0.0.0`
+and `Remove-NetFirewallRule -DisplayName "lowlight-demo"`.
+</details>
+
+### 3. Or use the command line
+
+From `src/`:
+
+```bash
+python enhance_image.py dark.jpg -o enhanced.jpg                      # default ("natural")
+python enhance_image.py dark.jpg -o enhanced.jpg --preset detail      # text, number plates
+python enhance_image.py dark.jpg -o enhanced.jpg --steps-dir steps/   # also save every stage
+python enhance_image.py dark.jpg -o enhanced.jpg --skip colour        # switch a stage off
+```
+
+Run `python enhance_image.py -h` for all options. Photos larger than 2000 px
+are downscaled first (`--max-size 0` keeps full size).
+
+### 4. Or run it with Docker
+
+```bash
+docker build -t lowlight .
+docker run -p 7860:7860 lowlight     # then open http://localhost:7860
+```
+
+The same image works as a free [Hugging Face Docker Space](https://huggingface.co/docs/hub/spaces-sdks-docker)
+if you want a public link.
+
+---
+
+## How it works
+
+### The enhancement pipeline
+
+`src/pipeline/stages.py`: each stage takes the image from the previous one.
+
+| # | Stage | What it does | Topic |
 |---|---|---|---|
-| 1 | Illumination map | Brightest of B, G, R per pixel, smoothed with a guided filter (edge-preserving) | Retinex, spatial filtering |
-| 2 | Adaptive brightening | Gamma on the illumination map; gamma found by bisection so mean brightness hits a target. Same gain on B, G, R so colours don't shift | Point operations |
-| 3 | Denoising | Non-local means, strength from an estimated noise level (Immerkær), applied mostly where the photo was dark | Noise, spatial filtering |
-| 4 | Local contrast | Gentle CLAHE on the LAB L channel | Histogram processing |
-| 5 | Colour correction | Partial gray-world white balance + HSV saturation | Colour spaces |
-| 6 | Sharpening | Unsharp masking | Spatial filtering |
+| 1 | **Illumination map** | Takes the brightest of R, G, B at every pixel as "how much light fell here", then smooths it with a guided filter so it follows object edges | Retinex theory, spatial filtering |
+| 2 | **Brighten** | Gamma correction applied to the illumination map rather than the image: dark areas get a big boost, bright ones almost none. Gamma is picked automatically (bisection) to reach a target brightness, and the same gain goes to R, G, B so colours don't shift | Point operations |
+| 3 | **Denoise** | Non-local means, with strength set from the image's measured noise level (Immerkær's method), applied mostly where the photo was darkest | Noise, spatial filtering |
+| 4 | **Local contrast** | CLAHE on the lightness channel of LAB only, so colours aren't distorted | Histogram processing |
+| 5 | **Colour correction** | Gray-world white balance (capped, so a sunset doesn't turn grey) and an HSV saturation adjustment | Colour spaces |
+| 6 | **Sharpen** | Unsharp masking: adds back a fraction of (image − blurred image) | Spatial filtering |
 
-Plus **homomorphic filtering** (`src/classical/homomorphic.py`), a
-frequency-domain alternative, as a comparison method.
+Brightening comes first because the other steps behave badly on near-black
+pixels. Denoising comes before contrast and colour so they don't amplify
+grain, and sharpening is last so it doesn't sharpen noise.
 
 ### Presets
 
-| Preset | Used for | How the settings were chosen |
+| Preset | For | Settings |
 |---|---|---|
-| `benchmark` | All reported metrics | Grid search on LOL training images (below). Sharpening off |
-| `natural` *(default in the CLI and web demo)* | Real photos | Hand-set: moderate denoising, CLAHE 1.5, saturation 1.1, light sharpening, white-balance gain capped at 1.2 |
-| `detail` | Text, number plates | Hand-set: light denoising (it smears small text), CLAHE 2.5, strong sharpening |
+| `natural` *(default)* | Everyday dark photos | Moderate denoising, gentle contrast, slight saturation boost, light sharpening |
+| `detail` | Text, signs, number plates | Light denoising (strong denoising smears small text), stronger contrast and sharpening |
+| `benchmark` | The measurements below | Settings chosen by comparing scores on reference photos; sharpening off |
 
-Why not use the tuned settings everywhere? LOL's reference images are soft
-and muted, so the tuned settings come out flat on real photos. Uncapped
-gray-world white balance also turns scenes dominated by one colour, such as a
-sunset, grey. The `natural` and `detail` presets are judged by eye, not by
-PSNR/SSIM.
+### Zoom, deblur and text view
 
-### Parameter tuning
+`src/pipeline/zoom.py`, used by the web app's *Zoom into a detail* section.
+The selected area is cut from the brightened image (before denoising can
+smooth fine detail away), then:
 
-All parameters were chosen by a small grid search (`src/tune_pipeline.py`)
-on 100 images from the LOL training set (`our485`), stage by stage in
-pipeline order, maximising PSNR + 10·SSIM. The 15 test images were never
-used for tuning. Full log: `results/tune.log`; chosen values:
-`results/tuned_params.json`.
+1. **Motion deblur (optional):** Wiener deconvolution with a straight-line blur kernel,
+   `F = conj(H) / (|H|² + NSR) · G`. You set the smear length, direction and
+   strength with sliders and watch the result update live. *Image restoration.*
+2. **Denoise and enlarge** up to 8× with Lanczos interpolation. *Interpolation.*
+3. **Strong local contrast and sharpening** (CLAHE + unsharp mask).
+4. **Text view:** adaptive thresholding to black and white, which copes with
+   uneven light such as headlight glare. *Segmentation.*
 
-What tuning found:
-- **Denoising is the most valuable stage after brightening** (SSIM 0.49 → 0.74 on the training images).
-- **Colour correction helps** (+0.7 dB, mostly from white balance).
-- **CLAHE and saturation help only at their gentlest settings**, and **every sharpening amount lowered both scores**, so sharpening is off in the `benchmark` preset. LOL's reference images are soft and muted, so these steps move the output away from the reference even when it looks punchier.
+There is also **homomorphic filtering** (`src/classical/homomorphic.py`), a
+frequency-domain method (log → FFT → high-emphasis filter → inverse FFT), as
+a comparison.
 
-## Zoom and motion deblur
+### Limits
 
-`src/pipeline/zoom.py`, used by the web demo's "Zoom into a detail" section.
-The selected region is taken from the brightened image (before denoising
-smooths fine detail away), then:
+- Brightening can only reveal detail the camera actually recorded. Very dark
+  areas mostly contain noise, so pitch-black photos come out grainy.
+- Zoom can't recover characters that aren't in the pixels. A number plate
+  only ~15 px wide, as in typical far-away CCTV stills, gets a clearer outline
+  but stays unreadable. Aim for plates at least ~80–100 px wide.
+- Deblurring only helps when the length and direction match the real motion.
+  Wrong settings make things worse.
 
-1. **Motion deblur (optional):** Wiener deconvolution with a straight-line
-   blur kernel, `F = conj(H) / (|H|² + NSR) · G`. The user sets the smear
-   length, its direction and the strength (NSR) with sliders. *Image restoration.*
-2. **Denoise, then enlarge** with Lanczos interpolation (up to 8×). *Interpolation.*
-3. **Strong CLAHE and unsharp masking.**
-4. **Text view:** adaptive (local-mean) thresholding to black and white, which
-   copes with uneven lighting such as headlight glare. *Segmentation.*
+---
 
-**Controlled test** (`src/deblur_demo.py`): a synthetic plate blurred by
-15 px of motion with added noise.
+## Measured results
 
-| | PSNR (dB) |
-|---|---|
-| Blurred | 16.39 |
-| Wiener, NSR 0.005 (best) | **21.28** |
-| Wiener, direction off by 50° | 8.59 |
-
-![Deblur demo](results/figures/deblur_demo.png)
-
-Deblurring only helps when the blur's length and direction match the real
-motion; with wrong settings it makes things much worse, hence the live sliders.
-
-**Limits.** No classical method can recover characters that aren't in the
-pixels. If a plate is only ~15 px wide or heavily compressed, as in typical
-far-away CCTV stills, these tools make the plate's outline clearer but the
-characters stay unreadable. AI "super-resolution" doesn't solve this either:
-it invents plausible characters, which is why such output isn't accepted as
-evidence.
-
-## Results
-
-Mean over the 15 LOL test images (`eval15`), from `results/metrics_summary.csv`:
+Quality is measured with **PSNR** and **SSIM** (higher is better) against
+reference photos from the public **LOL dataset**, which has pairs of the same
+scene shot in low light and normal light. The scores below are means over its
+15 test pairs. The pipeline's settings were picked using a separate group of
+100 LOL pairs, so these 15 were never used to choose anything.
 
 | Method | PSNR (dB) | SSIM |
 |---|---|---|
 | CLAHE alone | 9.13 | 0.357 |
-| Gamma (γ = 2.2) | 13.23 | 0.590 |
-| Histogram equalization | 14.26 | 0.425 |
+| Gamma correction alone | 13.23 | 0.590 |
+| Histogram equalization alone | 14.26 | 0.425 |
 | Multi-scale Retinex | 15.50 | 0.591 |
 | Single-scale Retinex | 15.57 | 0.597 |
 | Homomorphic filtering | 16.15 | 0.383 |
-| **Pipeline, stages 1–2** (illumination + brighten) | 15.69 | 0.485 |
-| **+ denoise** | 16.45 | **0.729** |
-| **+ contrast** | 16.43 | 0.718 |
-| **+ colour — default pipeline** | **16.47** | 0.716 |
+| Pipeline: illumination + brighten | 15.69 | 0.485 |
+| + denoise | 16.45 | **0.729** |
+| + contrast | 16.43 | 0.718 |
+| **+ colour (full pipeline, `benchmark`)** | **16.47** | 0.716 |
 | + sharpen (amount 0.4) | 16.23 | 0.691 |
 
-The full pipeline has the best PSNR of all methods and a much better SSIM
-than any single operation. On the test set, contrast and colour change the
-scores very little (they helped slightly on the 100 training images: 16.37 →
-17.19 dB), but they visibly remove colour casts — compare the "pipeline"
-and "ssr"/"homomorphic" columns in the figure.
+The full pipeline scores best on PSNR and far better on SSIM than any single
+method. Denoising adds the most. Sharpening lowers the scores because the LOL
+reference photos are themselves soft, which is why `benchmark` leaves it off
+while the presets for real photos use it.
 
-Speed: ~0.5 s for a 600×400 LOL image, ~1.7 s for a 12 MP phone photo
-(downscaled to 1600 px) on a laptop CPU (i7-1255U).
+**Motion-deblur test** (`src/deblur_demo.py`): a synthetic plate with known
+text, blurred by 15 px of motion plus noise.
 
-## Usage
+| | PSNR (dB) |
+|---|---|
+| Blurred | 16.39 |
+| Deblurred (Wiener) | **21.28** |
+| Deblurred with direction 50° wrong | 8.59 |
 
-### Setup
+![Deblur demo](results/figures/deblur_demo.png)
 
-Python 3.12. System Python is PEP 668-managed, so use a venv:
+**Speed** on a laptop CPU (Intel i7-1255U): ~0.3–0.5 s for a 600×400 image,
+~1.7 s for a 12 MP phone photo.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+### Reproduce the measurements
 
-All commands below are run from `src/`.
-
-### Enhance a photo
-
-```bash
-python enhance_image.py dark.jpg -o enhanced.jpg                      # natural preset
-python enhance_image.py dark.jpg -o enhanced.jpg --preset detail      # text, plates
-python enhance_image.py dark.jpg -o enhanced.jpg --steps-dir steps/   # save every stage
-python enhance_image.py dark.jpg -o enhanced.jpg --skip colour --sharpen 0.4
-```
-
-### Web demo
-
-```bash
-uvicorn web.server:app --host 0.0.0.0 --port 8000
-```
-
-Open http://localhost:8000. To use it from a phone, connect the phone to the
-same Wi-Fi and open `http://<laptop-ip>:8000` (find the IP with `ip addr` /
-`ipconfig`; on WSL you may need to forward the port from Windows).
-
-To host it publicly, the included `Dockerfile` runs as-is as a
-[Hugging Face Docker Space](https://huggingface.co/docs/hub/spaces-sdks-docker) (port 7860).
-
-### Dataset — LOL
-
-Used only for measuring quality and tuning parameters. See `data/README.md`
-for download links, then check the layout with `python data/verify_lol.py`.
-
-### Reproduce the numbers
+Optional. Only needed for the numbers above, not for using the app.
+Download the LOL dataset as described in [`data/README.md`](data/README.md), then from `src/`:
 
 ```bash
 D=../data/raw/LOL/lol_dataset
-python tune_pipeline.py --low-dir $D/our485/low --high-dir $D/our485/high   # ~20 min
+python data/verify_lol.py                                                   # check the folder layout
 python evaluate.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/metrics.csv
 python make_figure.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/figures/comparison.png
 python deblur_demo.py --out ../results/figures/deblur_demo.png
+python tune_pipeline.py --low-dir $D/our485/low --high-dir $D/our485/high   # re-pick settings (~20 min)
 ```
+
+---
 
 ## Project structure
 
 ```
 lowlight-enhancement/
-├── Dockerfile               # hosting the web demo
-├── requirements.txt
-├── data/README.md           # dataset download instructions
 ├── src/
 │   ├── pipeline/
-│   │   ├── stages.py        # the six stages + tuned parameters
-│   │   ├── pipeline.py      # runs stages in order, presets, keeps intermediate images
-│   │   └── zoom.py          # region zoom, Wiener motion deblur, text view
-│   ├── classical/           # single-operation baselines + homomorphic filter
-│   ├── data/                # LOL pairing + layout check
+│   │   ├── stages.py        # the six enhancement stages and their settings
+│   │   ├── pipeline.py      # runs the stages in order, presets
+│   │   └── zoom.py          # zoom, Wiener motion deblur, text view
+│   ├── classical/           # single-step methods (gamma, hist. eq., CLAHE, Retinex, homomorphic)
 │   ├── web/
-│   │   ├── server.py        # FastAPI backend
-│   │   └── static/          # the webpage + sample photos
+│   │   ├── server.py        # web app backend (FastAPI)
+│   │   └── static/          # the web page and sample photos
 │   ├── enhance_image.py     # command-line tool
-│   ├── tune_pipeline.py     # parameter grid search (training images only)
-│   ├── evaluate.py          # PSNR/SSIM on the test set
-│   ├── deblur_demo.py       # synthetic-plate deblur test
-│   └── make_figure.py
-└── results/                 # metrics, tuning log, comparison figure
+│   ├── evaluate.py          # PSNR/SSIM measurements
+│   ├── make_figure.py       # comparison figure
+│   ├── deblur_demo.py       # synthetic deblur test
+│   ├── tune_pipeline.py     # tries setting values and keeps the best-scoring ones
+│   └── data/                # helpers for the LOL reference photos
+├── results/                 # measurements, settings search log, figures
+├── data/README.md           # how to get the LOL dataset (optional)
+├── Dockerfile
+└── requirements.txt
 ```

@@ -1,7 +1,7 @@
-"""Tune the pipeline's parameters on LOL training images (our485).
+"""Pick the pipeline's settings by trying values on LOL reference photos (our485).
 
-Nothing is learned in the machine-learning sense: this is a small grid
-search over a handful of hand-chosen values per parameter. Stages are tuned
+This is a plain grid search: a handful of hand-chosen values per setting are
+tried, and the best-scoring ones are kept. Stages are tuned
 greedily in pipeline order — each stage's parameters are chosen to give the
 best score on the output so far, with the earlier stages already fixed — so
 every stage's outputs are computed once per candidate value, not once per
@@ -78,7 +78,7 @@ def main():
     print(f"tuning on {len(pairs)} images from {args.low_dir}")
 
     gts = [cv2.imread(str(h)) for _, h in pairs]
-    # Each entry: (current image, shared info dict) for one training image.
+    # Each entry: (current image, shared info dict) for one photo.
     state = [(to_float(cv2.imread(str(l))), {}) for l, _ in pairs]
     params = PipelineParams()
     log = []
@@ -103,7 +103,7 @@ def main():
         chosen = {n: getattr(params, n) for n in names}
         print(f"stage {[f.__name__ for f in fns]} -> {chosen}  psnr={p:.2f} ssim={s:.3f}\n")
         log.append({"stages": [f.__name__ for f in fns], "chosen": chosen,
-                    "train_psnr": p, "train_ssim": s})
+                    "search_psnr": p, "search_ssim": s})
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

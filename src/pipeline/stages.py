@@ -23,8 +23,8 @@ from classical.clahe import clahe_enhance
 
 @dataclass
 class PipelineParams:
-    # Defaults are the values chosen by tune_pipeline.py on 100 LOL training
-    # images (results/tuned_params.json); the test set was never used.
+    # Defaults are the values chosen by tune_pipeline.py on 100 LOL reference
+    # photos (results/tuned_params.json); the 15 test photos were never used.
     # Stage 1: illumination map
     guide_radius: int = 30          # guided-filter window radius (pixels, at 600px width)
     guide_eps: float = 1e-3         # guided-filter smoothness; larger = smoother map
