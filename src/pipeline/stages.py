@@ -39,6 +39,7 @@ class PipelineParams:
     clahe_tiles: int = 8
     # Stage 5: colour
     white_balance_strength: float = 0.5  # 0 = off, 1 = full gray-world
+    wb_max_gain: float | None = None     # cap per-channel gain (protects sunsets etc.); None = no cap
     saturation: float = 0.9
     # Stage 6: sharpening
     sharpen_amount: float = 0.4   # stage is off by default, see pipeline.DEFAULT_ENABLED
@@ -181,13 +182,16 @@ def colour_correct(img, info, p: PipelineParams):
     Gray-world assumes the scene averages to neutral grey, so each channel is
     scaled to make the channel means equal — this removes yellow/blue casts
     from indoor or street lighting. Applied at partial strength because the
-    assumption fails for scenes dominated by one colour. Saturation is then
+    assumption fails for scenes dominated by one colour (a sunset would turn
+    grey), so the gain can also be capped with wb_max_gain. Saturation is then
     scaled in HSV (tuning on LOL picked 0.9, i.e. slightly muted: the LOL
     reference images are less saturated than the brightened output).
     """
     means = img.reshape(-1, 3).mean(axis=0)
     gains = means.mean() / np.maximum(means, 1e-6)
     gains = 1.0 + p.white_balance_strength * (gains - 1.0)
+    if p.wb_max_gain:
+        gains = np.clip(gains, 1.0 / p.wb_max_gain, p.wb_max_gain)
     out = np.clip(img * gains, 0.0, 1.0)
 
     hsv = cv2.cvtColor(out, cv2.COLOR_BGR2HSV)

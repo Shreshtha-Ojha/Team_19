@@ -29,6 +29,19 @@ REQUIRED = {"illumination", "brighten"}
 # both PSNR and SSIM (results/tune.log). It stays available as an option.
 DEFAULT_ENABLED = set(STAGE_NAMES) - {"sharpen"}
 
+# Named settings. "benchmark" is the LOL-tuned default used for the reported
+# metrics. LOL's reference images are soft and muted, so on real photos those
+# settings look flat; "natural" and "detail" are hand-set for real photos and
+# are judged by eye, not by PSNR/SSIM.
+PRESETS = {
+    "benchmark": (PipelineParams(), DEFAULT_ENABLED),
+    "natural": (PipelineParams(denoise_strength=1.0, clahe_clip=1.5, saturation=1.1,
+                               wb_max_gain=1.2, sharpen_amount=0.3), set(STAGE_NAMES)),
+    # Light denoising (it smears small text), strong local contrast and sharpening.
+    "detail": (PipelineParams(denoise_strength=0.5, clahe_clip=2.5, saturation=1.0,
+                              wb_max_gain=1.2, sharpen_amount=0.8, sharpen_sigma=1.0), set(STAGE_NAMES)),
+}
+
 
 @dataclass
 class Result:

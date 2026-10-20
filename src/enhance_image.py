@@ -1,10 +1,11 @@
 """Enhance a single dark photo.
 
 Usage (from src/):
-    python enhance_image.py dark.jpg -o enhanced.jpg
+    python enhance_image.py dark.jpg -o enhanced.jpg                      # "natural" preset
+    python enhance_image.py dark.jpg -o enhanced.jpg --preset detail      # text, plates
     python enhance_image.py dark.jpg -o enhanced.jpg --steps-dir steps/   # also save every stage
     python enhance_image.py dark.jpg -o enhanced.jpg --skip colour
-    python enhance_image.py dark.jpg -o enhanced.jpg --sharpen 0.4         # turn sharpening on
+    python enhance_image.py dark.jpg -o enhanced.jpg --sharpen 0.4         # override sharpening amount
 
 Large photos are downscaled to --max-size on the long side first (default
 2000px): denoising cost grows with pixel count, and phone photos are often
@@ -12,12 +13,12 @@ Large photos are downscaled to --max-size on the long side first (default
 """
 import argparse
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import cv2
 
-from pipeline.pipeline import DEFAULT_ENABLED, REQUIRED, enhance
-from pipeline.stages import PipelineParams
+from pipeline.pipeline import PRESETS, REQUIRED, STAGE_NAMES, enhance
 
 
 def load_image(path, max_size: int):
@@ -37,19 +38,20 @@ def main():
     ap.add_argument("-o", "--output", required=True)
     ap.add_argument("--steps-dir", help="also save each stage's image here")
     ap.add_argument("--skip", nargs="*", default=[],
-                    choices=sorted(DEFAULT_ENABLED - REQUIRED), help="stages to switch off")
-    ap.add_argument("--sharpen", type=float, metavar="AMOUNT",
-                    help="turn on sharpening (off by default) with this amount, e.g. 0.4")
+                    choices=[s for s in STAGE_NAMES if s not in REQUIRED], help="stages to switch off")
+    ap.add_argument("--preset", choices=list(PRESETS), default="natural",
+                    help="natural: real photos; detail: text and plates; benchmark: LOL-tuned settings")
+    ap.add_argument("--sharpen", type=float, metavar="AMOUNT", help="override the sharpening amount")
     ap.add_argument("--max-size", type=int, default=2000)
     args = ap.parse_args()
 
     img = load_image(args.input, args.max_size)
     t0 = time.time()
-    enabled = DEFAULT_ENABLED - set(args.skip)
-    params = PipelineParams()
+    params, enabled = PRESETS[args.preset]
+    enabled = set(enabled) - set(args.skip)
     if args.sharpen:
-        enabled = enabled | {"sharpen"}
-        params.sharpen_amount = args.sharpen
+        enabled.add("sharpen")
+        params = replace(params, sharpen_amount=args.sharpen)
     result = enhance(img, params, enabled, keep_steps=bool(args.steps_dir))
     print(f"enhanced {img.shape[1]}x{img.shape[0]} in {time.time() - t0:.2f}s "
           f"(gamma={result.info['gamma']:.2f})")

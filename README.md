@@ -7,7 +7,9 @@ Retinex theory, point transforms, spatial filtering, histogram processing
 and colour-space conversions.
 
 It comes with a **web demo**: take or upload a photo on your phone and watch
-it get enhanced step by step, ending in a before/after slider.
+it get enhanced step by step, ending in a before/after slider. You can then
+drag a box around a detail such as a number plate to enlarge and sharpen it,
+with optional **motion deblurring**.
 
 ![Comparison on the LOL test set](results/figures/comparison.png)
 
@@ -22,10 +24,24 @@ it get enhanced step by step, ending in a before/after slider.
 | 3 | Denoising | Non-local means, strength from an estimated noise level (Immerkær), applied mostly where the photo was dark | Noise, spatial filtering |
 | 4 | Local contrast | Gentle CLAHE on the LAB L channel | Histogram processing |
 | 5 | Colour correction | Partial gray-world white balance + HSV saturation | Colour spaces |
-| 6 | Sharpening *(off by default)* | Unsharp masking | Spatial filtering |
+| 6 | Sharpening | Unsharp masking | Spatial filtering |
 
 Plus **homomorphic filtering** (`src/classical/homomorphic.py`), a
 frequency-domain alternative, as a comparison method.
+
+### Presets
+
+| Preset | Used for | How the settings were chosen |
+|---|---|---|
+| `benchmark` | All reported metrics | Grid search on LOL training images (below). Sharpening off |
+| `natural` *(default in the CLI and web demo)* | Real photos | Hand-set: moderate denoising, CLAHE 1.5, saturation 1.1, light sharpening, white-balance gain capped at 1.2 |
+| `detail` | Text, number plates | Hand-set: light denoising (it smears small text), CLAHE 2.5, strong sharpening |
+
+Why not use the tuned settings everywhere? LOL's reference images are soft
+and muted, so the tuned settings come out flat on real photos. Uncapped
+gray-world white balance also turns scenes dominated by one colour, such as a
+sunset, grey. The `natural` and `detail` presets are judged by eye, not by
+PSNR/SSIM.
 
 ### Parameter tuning
 
@@ -38,7 +54,42 @@ used for tuning. Full log: `results/tune.log`; chosen values:
 What tuning found:
 - **Denoising is the most valuable stage after brightening** (SSIM 0.49 → 0.74 on the training images).
 - **Colour correction helps** (+0.7 dB, mostly from white balance).
-- **CLAHE and saturation help only at their gentlest settings**, and **every sharpening amount lowered both scores**, so sharpening is off by default. LOL's reference images are soft and muted, so these steps move the output away from the reference even when it looks punchier.
+- **CLAHE and saturation help only at their gentlest settings**, and **every sharpening amount lowered both scores**, so sharpening is off in the `benchmark` preset. LOL's reference images are soft and muted, so these steps move the output away from the reference even when it looks punchier.
+
+## Zoom and motion deblur
+
+`src/pipeline/zoom.py`, used by the web demo's "Zoom into a detail" section.
+The selected region is taken from the brightened image (before denoising
+smooths fine detail away), then:
+
+1. **Motion deblur (optional):** Wiener deconvolution with a straight-line
+   blur kernel, `F = conj(H) / (|H|² + NSR) · G`. The user sets the smear
+   length, its direction and the strength (NSR) with sliders. *Image restoration.*
+2. **Denoise, then enlarge** with Lanczos interpolation (up to 8×). *Interpolation.*
+3. **Strong CLAHE and unsharp masking.**
+4. **Text view:** adaptive (local-mean) thresholding to black and white, which
+   copes with uneven lighting such as headlight glare. *Segmentation.*
+
+**Controlled test** (`src/deblur_demo.py`): a synthetic plate blurred by
+15 px of motion with added noise.
+
+| | PSNR (dB) |
+|---|---|
+| Blurred | 16.39 |
+| Wiener, NSR 0.005 (best) | **21.28** |
+| Wiener, direction off by 50° | 8.59 |
+
+![Deblur demo](results/figures/deblur_demo.png)
+
+Deblurring only helps when the blur's length and direction match the real
+motion; with wrong settings it makes things much worse, hence the live sliders.
+
+**Limits.** No classical method can recover characters that aren't in the
+pixels. If a plate is only ~15 px wide or heavily compressed, as in typical
+far-away CCTV stills, these tools make the plate's outline clearer but the
+characters stay unreadable. AI "super-resolution" doesn't solve this either:
+it invents plausible characters, which is why such output isn't accepted as
+evidence.
 
 ## Results
 
@@ -84,7 +135,8 @@ All commands below are run from `src/`.
 ### Enhance a photo
 
 ```bash
-python enhance_image.py dark.jpg -o enhanced.jpg
+python enhance_image.py dark.jpg -o enhanced.jpg                      # natural preset
+python enhance_image.py dark.jpg -o enhanced.jpg --preset detail      # text, plates
 python enhance_image.py dark.jpg -o enhanced.jpg --steps-dir steps/   # save every stage
 python enhance_image.py dark.jpg -o enhanced.jpg --skip colour --sharpen 0.4
 ```
@@ -114,6 +166,7 @@ D=../data/raw/LOL/lol_dataset
 python tune_pipeline.py --low-dir $D/our485/low --high-dir $D/our485/high   # ~20 min
 python evaluate.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/metrics.csv
 python make_figure.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/figures/comparison.png
+python deblur_demo.py --out ../results/figures/deblur_demo.png
 ```
 
 ## Project structure
@@ -126,7 +179,8 @@ lowlight-enhancement/
 ├── src/
 │   ├── pipeline/
 │   │   ├── stages.py        # the six stages + tuned parameters
-│   │   └── pipeline.py      # runs stages in order, keeps intermediate images
+│   │   ├── pipeline.py      # runs stages in order, presets, keeps intermediate images
+│   │   └── zoom.py          # region zoom, Wiener motion deblur, text view
 │   ├── classical/           # single-operation baselines + homomorphic filter
 │   ├── data/                # LOL pairing + layout check
 │   ├── web/
@@ -135,6 +189,7 @@ lowlight-enhancement/
 │   ├── enhance_image.py     # command-line tool
 │   ├── tune_pipeline.py     # parameter grid search (training images only)
 │   ├── evaluate.py          # PSNR/SSIM on the test set
+│   ├── deblur_demo.py       # synthetic-plate deblur test
 │   └── make_figure.py
 └── results/                 # metrics, tuning log, comparison figure
 ```

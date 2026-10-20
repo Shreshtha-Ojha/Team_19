@@ -134,6 +134,46 @@
   .final-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center; }
   .meta { color: var(--muted); font-size: 14px; margin-left: auto; }
 
+  /* ---------- controls ---------- */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px;
+    margin-top: 8px;
+  }
+  .seg { display: inline-flex; background: var(--bg-2); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+  .seg button {
+    border: 0; background: none; color: var(--muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 600;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+  .slider-field { display: flex; align-items: center; gap: 12px; flex: 1 1 260px; color: var(--muted); font-size: 14px; }
+  .slider-field label { color: var(--text); font-weight: 600; white-space: nowrap; }
+  .slider-field input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
+  .slider-field output { min-width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
+  .busy { color: var(--muted); font-size: 14px; }
+
+  /* ---------- zoom ---------- */
+  .sub { color: var(--muted); margin: -8px 0 16px; }
+  .picker {
+    position: relative; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line);
+    cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; background: #000;
+  }
+  .picker img { width: 100%; pointer-events: none; }
+  .sel {
+    position: absolute; border: 2px solid var(--accent); background: rgba(245, 185, 74, .12);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, .45); pointer-events: none;
+  }
+  .zoom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+  .zoom-grid figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .zoom-grid img { width: 100%; background: #000; }
+  .zoom-grid figcaption { padding: 10px 14px; font-size: 14px; color: var(--muted); }
+  .zoom-grid figcaption b { color: var(--text); display: block; }
+  .deblur { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-top: 14px; }
+  .deblur .head { display: flex; align-items: center; gap: 10px; font-weight: 700; cursor: pointer; }
+  .deblur .head input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .deblur p { color: var(--muted); font-size: 14px; margin: 8px 0 14px; }
+  .deblur .fields { display: grid; gap: 12px; }
+  .deblur .fields.off { opacity: .45; pointer-events: none; }
+
   .hidden { display: none !important; }
   footer { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 16px 30px; }
 
@@ -143,6 +183,8 @@
     .step .txt { padding: 16px 18px 20px; }
     .meta { margin-left: 0; width: 100%; }
     .btn { flex: 1 1 auto; justify-content: center; }
+    .zoom-grid { grid-template-columns: 1fr; }
+    .controls { padding: 14px 16px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .step { transition: none; }
@@ -190,6 +232,19 @@
   </section>
 
   <section id="results" class="hidden">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Enhancement style">
+        <button data-preset="natural" aria-pressed="true">Natural</button>
+        <button data-preset="detail" aria-pressed="false">Max detail</button>
+      </div>
+      <div class="slider-field">
+        <label for="bright">Brightness</label>
+        <input type="range" id="bright" min="0.2" max="0.65" step="0.05" value="0.4">
+        <output id="bright-out"></output>
+      </div>
+      <span class="busy hidden" id="busy">Updating&hellip;</span>
+    </div>
+
     <div class="section-head">
       <h2>Step by step</h2>
       <button class="link" id="skip">Skip to result &darr;</button>
@@ -215,6 +270,36 @@
       <button class="btn" id="again">Try another photo</button>
       <span class="meta" id="meta"></span>
     </div>
+
+    <div class="section-head">
+      <h2>Zoom into a detail</h2>
+    </div>
+    <p class="sub">Drag a box around a number plate, a sign or any text to enlarge and sharpen it.</p>
+    <div class="picker" id="picker">
+      <img id="pick-img" alt="Enhanced photo: drag to select an area">
+      <div class="sel hidden" id="sel"></div>
+    </div>
+    <p class="error hidden" id="zoom-error" role="alert"></p>
+    <div id="zoom-out" class="hidden">
+      <div class="zoom-grid">
+        <figure><img id="z-plain" alt=""><figcaption><b>Just enlarged</b>The original pixels, made bigger.</figcaption></figure>
+        <figure><img id="z-enh" alt=""><figcaption><b>Enhanced</b>Denoised, smoothly enlarged, contrast and edges boosted.</figcaption></figure>
+        <figure><img id="z-text" alt=""><figcaption><b>Text view</b>Black and white, to make characters stand out.</figcaption></figure>
+      </div>
+      <div class="deblur">
+        <label class="head"><input type="checkbox" id="db-on"> Fix motion blur</label>
+        <p>If the text is smeared because the car or camera moved, set how long the smear is and which way it goes.
+           Wrong settings make it worse, so adjust until the text looks sharpest.</p>
+        <div class="fields off" id="db-fields">
+          <div class="slider-field"><label for="db-len">Smear length</label>
+            <input type="range" id="db-len" min="2" max="40" step="1" value="10"><output id="db-len-out"></output></div>
+          <div class="slider-field"><label for="db-ang">Direction</label>
+            <input type="range" id="db-ang" min="0" max="180" step="1" value="0"><output id="db-ang-out"></output></div>
+          <div class="slider-field"><label for="db-str">Strength</label>
+            <input type="range" id="db-str" min="0" max="1" step="0.05" value="0.5"><output id="db-str-out"></output></div>
+        </div>
+      </div>
+    </div>
   </section>
 </main>
 <footer>Classical image processing only &mdash; no AI, no training data.</footer>
@@ -223,6 +308,7 @@
 const $ = (id) => document.getElementById(id);
 const STEP_DELAY = 900; // ms between step cards appearing
 let revealTimers = [];
+const state = { id: null, preset: "natural", brightness: null, box: null };
 
 function show(section) {
   for (const id of ["start", "loading", "results"]) $(id).classList.toggle("hidden", id !== section);
@@ -234,22 +320,52 @@ function showError(msg) {
   $("error").classList.remove("hidden");
 }
 
+async function post(url, body) {
+  let res;
+  try {
+    res = await fetch(url, { method: "POST", body, headers: body instanceof FormData ? {} : { "Content-Type": "application/json" } });
+  } catch {
+    throw new Error("Couldn't reach the server. Is it still running?");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : `Server error (${res.status})`);
+  return data;
+}
+
+// New photo: upload it and play the step-by-step reveal.
 async function enhance(blob, filename) {
   $("error").classList.add("hidden");
   show("loading");
   window.scrollTo({ top: 0, behavior: "smooth" });
   const form = new FormData();
   form.append("file", blob, filename || "photo.jpg");
-  let data;
+  form.append("preset", state.preset);
+  state.brightness = null; // let the server pick the preset's default
+  state.box = null;
   try {
-    const res = await fetch("/api/enhance", { method: "POST", body: form });
-    data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.detail || `Server error (${res.status})`);
+    render(await post("/api/enhance", form), true);
   } catch (e) {
-    showError(e.message === "Failed to fetch" ? "Couldn't reach the server. Is it still running?" : e.message);
-    return;
+    showError(e.message);
   }
-  render(data);
+}
+
+// Same photo, new settings: re-run without the reveal animation.
+let rerunSeq = 0;
+async function rerun() {
+  const seq = ++rerunSeq;
+  $("busy").classList.remove("hidden");
+  const form = new FormData();
+  form.append("id", state.id);
+  form.append("preset", state.preset);
+  if (state.brightness !== null) form.append("brightness", state.brightness);
+  try {
+    const data = await post("/api/enhance", form);
+    if (seq === rerunSeq) { render(data, false); if (state.box) zoom(); }
+  } catch (e) {
+    if (seq === rerunSeq) showError(e.message);
+  } finally {
+    if (seq === rerunSeq) $("busy").classList.add("hidden");
+  }
 }
 
 function card(badge, title, text, src) {
@@ -264,9 +380,15 @@ function card(badge, title, text, src) {
   return el;
 }
 
-function render(data) {
+function render(data, animate) {
   revealTimers.forEach(clearTimeout);
   revealTimers = [];
+  state.id = data.id;
+  state.brightness = data.brightness;
+  $("bright").value = data.brightness;
+  $("bright-out").textContent = Math.round(data.brightness * 100) + "%";
+  document.querySelectorAll(".seg button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.preset === state.preset)));
   const steps = $("steps");
   steps.replaceChildren(card("Start", "Your photo", "The original, straight from the camera.", data.input));
   data.steps.forEach((s, i) =>
@@ -276,10 +398,20 @@ function render(data) {
   $("before").src = data.input;
   $("download").href = data.final;
   $("meta").textContent = `${data.width}×${data.height} · enhanced in ${data.seconds}s`;
-  setPos(50);
+  $("pick-img").src = data.final;
+  state.imgW = data.width;
+  state.imgH = data.height;
   show("results");
 
   const cards = [...steps.children];
+  if (!animate) {
+    cards.forEach((c) => c.classList.add("shown"));
+    return;
+  }
+  setPos(50);
+  $("sel").classList.add("hidden");
+  $("zoom-out").classList.add("hidden");
+  $("zoom-error").classList.add("hidden");
   cards.forEach((c, i) => revealTimers.push(setTimeout(() => {
     c.classList.add("shown");
     if (i > 0) c.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -319,6 +451,110 @@ document.querySelectorAll(".sample").forEach((b) => b.addEventListener("click", 
   const res = await fetch(b.dataset.src);
   enhance(await res.blob(), "sample.jpg");
 }));
+
+document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+  if (state.preset === b.dataset.preset) return;
+  state.preset = b.dataset.preset;
+  state.brightness = null; // each style has its own default brightness
+  document.querySelectorAll(".seg button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  rerun();
+}));
+$("bright").addEventListener("input", (e) => {
+  $("bright-out").textContent = Math.round(e.target.value * 100) + "%";
+});
+$("bright").addEventListener("change", (e) => {
+  state.brightness = parseFloat(e.target.value);
+  rerun();
+});
+
+// ---------- zoom: drag a box on the picker ----------
+const picker = $("picker");
+let dragStart = null;
+
+function pointInImage(e) {
+  const r = picker.getBoundingClientRect();
+  return {
+    x: Math.min(Math.max(e.clientX - r.left, 0), r.width),
+    y: Math.min(Math.max(e.clientY - r.top, 0), r.height),
+    r,
+  };
+}
+function drawSel(a, b) {
+  const sel = $("sel");
+  sel.style.left = Math.min(a.x, b.x) + "px";
+  sel.style.top = Math.min(a.y, b.y) + "px";
+  sel.style.width = Math.abs(a.x - b.x) + "px";
+  sel.style.height = Math.abs(a.y - b.y) + "px";
+  sel.classList.remove("hidden");
+}
+picker.addEventListener("pointerdown", (e) => {
+  picker.setPointerCapture(e.pointerId);
+  dragStart = pointInImage(e);
+  drawSel(dragStart, dragStart);
+});
+picker.addEventListener("pointermove", (e) => { if (dragStart) drawSel(dragStart, pointInImage(e)); });
+picker.addEventListener("pointerup", (e) => {
+  if (!dragStart) return;
+  const end = pointInImage(e), r = end.r;
+  const sx = state.imgW / r.width, sy = state.imgH / r.height;
+  const box = {
+    x: Math.round(Math.min(dragStart.x, end.x) * sx), y: Math.round(Math.min(dragStart.y, end.y) * sy),
+    w: Math.round(Math.abs(end.x - dragStart.x) * sx), h: Math.round(Math.abs(end.y - dragStart.y) * sy),
+  };
+  dragStart = null;
+  if (box.w < 8 || box.h < 4) { $("sel").classList.add("hidden"); return; }
+  // Remember the box as fractions so it survives the picker being resized.
+  state.box = box;
+  state.boxFrac = { l: box.x / state.imgW, t: box.y / state.imgH, w: box.w / state.imgW, h: box.h / state.imgH };
+  zoom();
+});
+window.addEventListener("resize", () => {
+  if (!state.boxFrac || $("sel").classList.contains("hidden")) return;
+  const r = picker.getBoundingClientRect(), f = state.boxFrac;
+  drawSel({ x: f.l * r.width, y: f.t * r.height }, { x: (f.l + f.w) * r.width, y: (f.t + f.h) * r.height });
+});
+
+// Strength slider 0..1 -> noise-to-signal ratio 0.05 (gentle) .. 0.002 (strong), log scale.
+const nsrOf = (s) => 0.05 * Math.pow(0.002 / 0.05, s);
+function syncDeblurLabels() {
+  $("db-len-out").textContent = $("db-len").value + " px";
+  $("db-ang-out").textContent = $("db-ang").value + "°";
+  $("db-str-out").textContent = Math.round($("db-str").value * 100) + "%";
+  $("db-fields").classList.toggle("off", !$("db-on").checked);
+}
+syncDeblurLabels();
+
+let zoomSeq = 0, zoomTimer = null;
+async function zoom() {
+  const seq = ++zoomSeq;
+  const on = $("db-on").checked;
+  try {
+    const out = await post("/api/zoom", JSON.stringify({
+      id: state.id, ...state.box, preset: state.preset, brightness: state.brightness,
+      deblur_length: on ? parseFloat($("db-len").value) : 0,
+      deblur_angle: parseFloat($("db-ang").value),
+      deblur_nsr: nsrOf(parseFloat($("db-str").value)),
+    }));
+    if (seq !== zoomSeq) return; // a newer request is on its way
+    $("z-plain").src = out.plain;
+    $("z-enh").src = out.enhanced;
+    $("z-text").src = out.text;
+    $("zoom-error").classList.add("hidden");
+    $("zoom-out").classList.remove("hidden");
+  } catch (e) {
+    if (seq !== zoomSeq) return;
+    $("zoom-error").textContent = e.message;
+    $("zoom-error").classList.remove("hidden");
+  }
+}
+for (const id of ["db-on", "db-len", "db-ang", "db-str"]) {
+  $(id).addEventListener("input", () => {
+    syncDeblurLabels();
+    if (!state.box) return;
+    clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(zoom, 150);
+  });
+}
 
 const drop = $("drop");
 ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
