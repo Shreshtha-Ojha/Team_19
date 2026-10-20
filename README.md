@@ -74,15 +74,40 @@ python enhance_image.py dark.jpg -o enhanced.jpg --skip colour        # switch a
 Run `python enhance_image.py -h` for all options. Photos larger than 2000 px
 are downscaled first (`--max-size 0` keeps full size).
 
-### 4. Or run it with Docker
+## Put it online (free)
 
-```bash
-docker build -t lowlight .
-docker run -p 7860:7860 lowlight     # then open http://localhost:7860
-```
+To get a public link that works from any phone, host it on
+[Hugging Face Spaces](https://huggingface.co/spaces). Their servers build and
+run the app using the `Dockerfile` in this repo, so you don't need Docker
+installed yourself.
 
-The same image works as a free [Hugging Face Docker Space](https://huggingface.co/docs/hub/spaces-sdks-docker)
-if you want a public link.
+1. Create a free account at https://huggingface.co.
+2. Create a Space at https://huggingface.co/new-space: choose **Docker** as
+   the SDK, the **Blank** template and **CPU basic** (free) hardware.
+3. Create an access token with **write** permission at
+   https://huggingface.co/settings/tokens.
+4. From the repository root, run:
+
+   ```bash
+   scripts/deploy_hf.sh <your-hf-username>/<space-name>
+   ```
+
+   When git asks for a password, paste the token.
+
+The build takes a few minutes; then the app is live at
+`https://huggingface.co/spaces/<your-hf-username>/<space-name>`. Run the
+script again whenever you change the code.
+
+Free Spaces go to sleep after about two days without visitors, and the first
+visit after that takes a minute or so to wake up. Open it a few minutes
+before a presentation.
+
+<details>
+<summary>Running the container yourself</summary>
+
+If you have Docker installed: `docker build -t lowlight .` then
+`docker run -p 7860:7860 lowlight`, and open http://localhost:7860.
+</details>
 
 ---
 
@@ -187,7 +212,8 @@ text, blurred by 15 px of motion plus noise.
 ### Reproduce the measurements
 
 Optional. Only needed for the numbers above, not for using the app.
-Download the LOL dataset as described in [`data/README.md`](data/README.md), then from `src/`:
+Install the extra packages with `pip install -r requirements-dev.txt`,
+download the LOL dataset as described in [`data/README.md`](data/README.md), then from `src/`:
 
 ```bash
 D=../data/raw/LOL/lol_dataset
@@ -221,6 +247,8 @@ lowlight-enhancement/
 │   └── data/                # helpers for the LOL reference photos
 ├── results/                 # measurements, settings search log, figures
 ├── data/README.md           # how to get the LOL dataset (optional)
-├── Dockerfile
-└── requirements.txt
+├── scripts/deploy_hf.sh     # publish the web app to Hugging Face Spaces
+├── Dockerfile               # build recipe used by the hosting service
+├── requirements.txt         # packages for the app and CLI
+└── requirements-dev.txt     # + packages for the measurement scripts
 ```
