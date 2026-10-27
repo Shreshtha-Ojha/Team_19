@@ -1238,8 +1238,8 @@ How it works:
    Print the size, the time and the chosen γ.
 5. Write the output, and optionally every step image.
 
-Unlike the web app, the CLI does **not** fix EXIF rotation, because it
-reads with OpenCV directly.
+Phone photos come out the right way up. `cv2.imread` applies the EXIF
+orientation tag by default, just as the web app does through Pillow.
 
 ---
 
@@ -1614,7 +1614,6 @@ surprise you.
 - In the CLI, `if args.sharpen:` treats `--sharpen 0` as "not given", so
   it cannot be used to force sharpening to zero. Use the benchmark preset
   or `--skip sharpen` instead.
-- The CLI does not apply EXIF rotation; the web app does.
 - The `target_brightness` is hit exactly only right after stage 2. The
   final output ends up somewhat brighter (0.44–0.48 on the samples).
 - The web cache is per-process and in memory (see 9.1). The enhance
