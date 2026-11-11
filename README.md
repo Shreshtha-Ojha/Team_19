@@ -1,254 +1,84 @@
-# Low-Light Image Enhancement
+# Constellation Detection in Foggy, Low-Light Sky Images
 
-Turn a dark photo into a clear one using **classical image processing only**:
-no AI, no neural networks, no training. Every step is a standard operation
-from an image processing course (Retinex, gamma correction, filtering,
-histogram equalization, colour spaces, Wiener deconvolution) and can be
-explained on paper.
+Course project: *Low-Light Image Enhancement using Spatial and Copy-Paste
+Techniques*. A YOLOv8n detector finds constellations in night-sky images. We
+then measure how fog and low light break it, and how much classical
+enhancement and training-time augmentation (fog, copy-paste) recover.
 
-It comes with a **web app**. Take or upload a photo, watch it get enhanced
-step by step, compare before and after with a slider, then zoom into a detail
-such as a number plate to enlarge it, sharpen it and undo motion blur.
+All numbers below come from result files saved under `results/constellation/`.
 
-![Comparison with single-step methods](results/figures/comparison.png)
+## Status
 
----
-
-## Run it locally
-
-### 1. Install
-
-You need **Python 3.12** (what it was tested on) and git.
-
-```bash
-git clone https://github.com/Shreshtha-Ojha/lowlight-enhancement.git
-cd lowlight-enhancement
-python3 -m venv .venv
-source .venv/bin/activate          # Windows (PowerShell): .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### 2. Start the web app
-
-```bash
-cd src
-uvicorn web.server:app --host 0.0.0.0 --port 8000
-```
-
-Open **http://localhost:8000** and use *Take a photo*, *Upload a photo*, or
-one of the sample images. Stop the server with `Ctrl+C`.
-
-**Opening it on your phone:** connect the phone to the same Wi-Fi and open
-`http://<your-computer's-IP>:8000`. Find the IP with `ipconfig` on Windows,
-or `ip addr` / `ifconfig` on Linux and macOS. If it doesn't load, allow port
-8000 through the firewall.
-
-<details>
-<summary>Running inside WSL on Windows?</summary>
-
-The phone can't reach WSL directly, so forward the port from Windows. In an
-**administrator** PowerShell:
-
-```powershell
-$wsl = (wsl hostname -I).Trim().Split(" ")[0]
-netsh interface portproxy add v4tov4 listenport=8000 listenaddress=0.0.0.0 connectport=8000 connectaddress=$wsl
-New-NetFirewallRule -DisplayName "lowlight-demo" -Direction Inbound -LocalPort 8000 -Protocol TCP -Action Allow
-```
-
-Then use the **Windows** IP address from `ipconfig`. To undo:
-`netsh interface portproxy delete v4tov4 listenport=8000 listenaddress=0.0.0.0`
-and `Remove-NetFirewallRule -DisplayName "lowlight-demo"`.
-</details>
-
-### 3. Or use the command line
-
-From `src/`:
-
-```bash
-python enhance_image.py dark.jpg -o enhanced.jpg                      # default ("natural")
-python enhance_image.py dark.jpg -o enhanced.jpg --preset detail      # text, number plates
-python enhance_image.py dark.jpg -o enhanced.jpg --steps-dir steps/   # also save every stage
-python enhance_image.py dark.jpg -o enhanced.jpg --skip colour        # switch a stage off
-```
-
-Run `python enhance_image.py -h` for all options. Photos larger than 2000 px
-are downscaled first (`--max-size 0` keeps full size).
-
-## Put it online (free)
-
-To get a public link that works from any phone, host it on
-[Hugging Face Spaces](https://huggingface.co/spaces). Their servers build and
-run the app using the `Dockerfile` in this repo, so you don't need Docker
-installed yourself.
-
-1. Create a free account at https://huggingface.co.
-2. Create a Space at https://huggingface.co/new-space: choose **Docker** as
-   the SDK, the **Blank** template and **CPU basic** (free) hardware.
-3. Create an access token with **write** permission at
-   https://huggingface.co/settings/tokens.
-4. From the repository root, run:
-
-   ```bash
-   scripts/deploy_hf.sh <your-hf-username>/<space-name>
-   ```
-
-   When git asks for a password, paste the token.
-
-The build takes a few minutes; then the app is live at
-`https://huggingface.co/spaces/<your-hf-username>/<space-name>`. Run the
-script again whenever you change the code.
-
-Free Spaces go to sleep after about two days without visitors, and the first
-visit after that takes a minute or so to wake up. Open it a few minutes
-before a presentation.
-
-<details>
-<summary>Running the container yourself</summary>
-
-If you have Docker installed: `docker build -t lowlight .` then
-`docker run -p 7860:7860 lowlight`, and open http://localhost:7860.
-</details>
-
----
-
-## How it works
-
-### The enhancement pipeline
-
-`src/pipeline/stages.py`: each stage takes the image from the previous one.
-
-| # | Stage | What it does | Topic |
-|---|---|---|---|
-| 1 | **Illumination map** | Takes the brightest of R, G, B at every pixel as "how much light fell here", then smooths it with a guided filter so it follows object edges | Retinex theory, spatial filtering |
-| 2 | **Brighten** | Gamma correction applied to the illumination map rather than the image: dark areas get a big boost, bright ones almost none. Gamma is picked automatically (bisection) to reach a target brightness, and the same gain goes to R, G, B so colours don't shift | Point operations |
-| 3 | **Denoise** | Non-local means, with strength set from the image's measured noise level (Immerkær's method), applied mostly where the photo was darkest | Noise, spatial filtering |
-| 4 | **Local contrast** | CLAHE on the lightness channel of LAB only, so colours aren't distorted | Histogram processing |
-| 5 | **Colour correction** | Gray-world white balance (capped, so a sunset doesn't turn grey) and an HSV saturation adjustment | Colour spaces |
-| 6 | **Sharpen** | Unsharp masking: adds back a fraction of (image − blurred image) | Spatial filtering |
-
-Brightening comes first because the other steps behave badly on near-black
-pixels. Denoising comes before contrast and colour so they don't amplify
-grain, and sharpening is last so it doesn't sharpen noise.
-
-### Presets
-
-| Preset | For | Settings |
+| Phase | What | State |
 |---|---|---|
-| `natural` *(default)* | Everyday dark photos | Moderate denoising, gentle contrast, slight saturation boost, light sharpening |
-| `detail` | Text, signs, number plates | Light denoising (strong denoising smears small text), stronger contrast and sharpening |
-| `benchmark` | The measurements below | Settings chosen by comparing scores on reference photos; sharpening off |
+| 1 | Dataset check and leak-free re-split | done |
+| 2 | YOLOv8n baseline (Colab T4) | done |
+| 3 | Fog + low-light simulator, baseline under fog | done |
+| 4 | Classical enhancement before detection | in progress |
+| 5 | Retrain with fog / fog + copy-paste | planned |
+| 6 | Results table, figures | planned |
+| 7 | Constellation stick figures | planned |
 
-### Zoom, deblur and text view
+## Dataset
 
-`src/pipeline/zoom.py`, used by the web app's *Zoom into a detail* section.
-The selected area is cut from the brightened image (before denoising can
-smooth fine detail away), then:
+Roboflow Universe, `course-work-cytun/constellation-detector` v1 (Public
+Domain), 16 classes. The published splits share source images, so every
+phase uses the block re-split made by `src/constellation/resplit_dataset.py`
+(seed 0): 3294 train, 97 valid and 92 test images.
 
-1. **Motion deblur (optional):** Wiener deconvolution with a straight-line blur kernel,
-   `F = conj(H) / (|H|² + NSR) · G`. You set the smear length, direction and
-   strength with sliders and watch the result update live. *Image restoration.*
-2. **Denoise and enlarge** up to 8× with Lanczos interpolation. *Interpolation.*
-3. **Strong local contrast and sharpening** (CLAHE + unsharp mask).
-4. **Text view:** adaptive thresholding to black and white, which copes with
-   uneven light such as headlight glare. *Segmentation.*
+## Results so far
 
-There is also **homomorphic filtering** (`src/classical/homomorphic.py`), a
-frequency-domain method (log → FFT → high-emphasis filter → inverse FFT), as
-a comparison.
+Baseline YOLOv8n (100 epochs, 640 px), test split, 92 images, 283 boxes:
 
-### Limits
-
-- Brightening can only reveal detail the camera actually recorded. Very dark
-  areas mostly contain noise, so pitch-black photos come out grainy.
-- Zoom can't recover characters that aren't in the pixels. A number plate
-  only ~15 px wide, as in typical far-away CCTV stills, gets a clearer outline
-  but stays unreadable. Aim for plates at least ~80–100 px wide.
-- Deblurring only helps when the length and direction match the real motion.
-  Wrong settings make things worse.
-
----
-
-## Measured results
-
-Quality is measured with **PSNR** and **SSIM** (higher is better) against
-reference photos from the public **LOL dataset**, which has pairs of the same
-scene shot in low light and normal light. The scores below are means over its
-15 test pairs. The pipeline's settings were picked using a separate group of
-100 LOL pairs, so these 15 were never used to choose anything.
-
-| Method | PSNR (dB) | SSIM |
+| Test images | mAP50 | mAP50-95 |
 |---|---|---|
-| CLAHE alone | 9.13 | 0.357 |
-| Gamma correction alone | 13.23 | 0.590 |
-| Histogram equalization alone | 14.26 | 0.425 |
-| Multi-scale Retinex | 15.50 | 0.591 |
-| Single-scale Retinex | 15.57 | 0.597 |
-| Homomorphic filtering | 16.15 | 0.383 |
-| Pipeline: illumination + brighten | 15.69 | 0.485 |
-| + denoise | 16.45 | **0.729** |
-| + contrast | 16.43 | 0.718 |
-| **+ colour (full pipeline, `benchmark`)** | **16.47** | 0.716 |
-| + sharpen (amount 0.4) | 16.23 | 0.691 |
+| Clean | 0.866 | 0.454 |
+| Light fog | 0.070 | 0.032 |
+| Medium fog | 0.022 | 0.006 |
+| Heavy fog | 0.019 | 0.005 |
 
-The full pipeline scores best on PSNR and far better on SSIM than any single
-method. Denoising adds the most. Sharpening lowers the scores because the LOL
-reference photos are themselves soft, which is why `benchmark` leaves it off
-while the presets for real photos use it.
+Applying one part of "light" at a time shows that sensor noise causes most
+of the drop (mAP50 0.140 with noise alone, 0.789 with fog alone, 0.842 with
+darkening alone). The dataset images are almost noise-free, so the baseline
+never saw grain during training.
 
-**Motion-deblur test** (`src/deblur_demo.py`): a synthetic plate with known
-text, blurred by 15 px of motion plus noise.
+![Fog severities](results/constellation/phase3/figures/fog_examples_test.jpg)
 
-| | PSNR (dB) |
-|---|---|
-| Blurred | 16.39 |
-| Deblurred (Wiener) | **21.28** |
-| Deblurred with direction 50° wrong | 8.59 |
+## Fog and low-light simulator
 
-![Deblur demo](results/figures/deblur_demo.png)
-
-**Speed** on a laptop CPU (Intel i7-1255U): ~0.3–0.5 s for a 600×400 image,
-~1.7 s for a 12 MP phone photo.
-
-### Reproduce the measurements
-
-Optional. Only needed for the numbers above, not for using the app.
-Install the extra packages with `pip install -r requirements-dev.txt`,
-download the LOL dataset as described in [`data/README.md`](data/README.md), then from `src/`:
+`src/constellation/fog_sim.py` works in linear light and uses the haze model
+I = J·t + A·(1 − t), with patchy optical depth, glow around bright sources,
+reduced exposure, and Poisson + read noise. Each image's random seed comes
+from its file name, so the output is identical every run.
 
 ```bash
-D=../data/raw/LOL/lol_dataset
-python data/verify_lol.py                                                   # check the folder layout
-python evaluate.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/metrics.csv
-python make_figure.py --low-dir $D/eval15/low --high-dir $D/eval15/high --out ../results/figures/comparison.png
-python deblur_demo.py --out ../results/figures/deblur_demo.png
-python tune_pipeline.py --low-dir $D/our485/low --high-dir $D/our485/high   # re-pick settings (~20 min)
+python -m src.constellation.fog_sim --split test            # writes data/raw/constellations/fog/
+python -m src.constellation.fog_stats --out results/constellation/phase3
 ```
 
----
+## Setup
 
-## Project structure
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+# detection (evaluation runs on CPU; training runs on Colab):
+python -m venv .venv-det
+.venv-det/bin/pip install torch==2.14.1 torchvision --index-url https://download.pytorch.org/whl/cpu
+.venv-det/bin/pip install -r requirements-detection.txt
+```
 
+Evaluate a model on one test set:
+
+```bash
+.venv-det/bin/python src/constellation/eval_yolo.py \
+    --weights results/constellation/phase2/baseline/weights/best.pt \
+    --data data/raw/constellations/fog/light/data.yaml --split test --device cpu \
+    --out results/constellation/phase3/baseline_test_light.json
 ```
-lowlight-enhancement/
-├── src/
-│   ├── pipeline/
-│   │   ├── stages.py        # the six enhancement stages and their settings
-│   │   ├── pipeline.py      # runs the stages in order, presets
-│   │   └── zoom.py          # zoom, Wiener motion deblur, text view
-│   ├── classical/           # single-step methods (gamma, hist. eq., CLAHE, Retinex, homomorphic)
-│   ├── web/
-│   │   ├── server.py        # web app backend (FastAPI)
-│   │   └── static/          # the web page and sample photos
-│   ├── enhance_image.py     # command-line tool
-│   ├── evaluate.py          # PSNR/SSIM measurements
-│   ├── make_figure.py       # comparison figure
-│   ├── deblur_demo.py       # synthetic deblur test
-│   ├── tune_pipeline.py     # tries setting values and keeps the best-scoring ones
-│   └── data/                # helpers for the LOL reference photos
-├── results/                 # measurements, settings search log, figures
-├── data/README.md           # how to get the LOL dataset (optional)
-├── scripts/deploy_hf.sh     # publish the web app to Hugging Face Spaces
-├── Dockerfile               # build recipe used by the hosting service
-├── requirements.txt         # packages for the app and CLI
-└── requirements-dev.txt     # + packages for the measurement scripts
-```
+
+## Layout
+
+- `src/constellation/`: dataset checks, re-split, training, evaluation, fog simulator
+- `src/classical/`, `src/pipeline/`: classical enhancement operators (CLAHE,
+  Retinex, gamma, homomorphic filtering, denoising) used in Phase 4
+- `colab/`: notebooks for GPU training
+- `results/constellation/phaseN/`: saved outputs of each phase

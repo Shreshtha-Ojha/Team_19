@@ -1,9 +1,6 @@
-# Everything needed to run the web app and the command-line tool.
-# For the measurement scripts (evaluate, make_figure, tune_pipeline), also
-# install requirements-dev.txt.
+# Image processing: fog simulator, enhancement, statistics (src/constellation,
+# src/classical, src/pipeline). Detection (training and evaluation) also needs
+# requirements-detection.txt, installed in a separate environment.
 numpy==2.5.4
 opencv-python-headless==5.0.0.93
-pillow==12.3.0
-fastapi==0.148.0
-uvicorn==0.54.0
-python-multipart==0.0.32
+pyyaml==6.0.3
