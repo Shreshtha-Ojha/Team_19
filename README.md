@@ -14,7 +14,7 @@ All numbers below come from result files saved under `results/constellation/`.
 | 1 | Dataset check and leak-free re-split | done |
 | 2 | YOLOv8n baseline (Colab T4) | done |
 | 3 | Fog + low-light simulator, baseline under fog | done |
-| 4 | Classical enhancement before detection | in progress |
+| 4 | Classical enhancement before detection | done |
 | 5 | Retrain with fog / fog + copy-paste | planned |
 | 6 | Results table, figures | planned |
 | 7 | Constellation stick figures | planned |
@@ -43,6 +43,49 @@ darkening alone). The dataset images are almost noise-free, so the baseline
 never saw grain during training.
 
 ![Fog severities](results/constellation/phase3/figures/fog_examples_test.jpg)
+
+### Enhancement before detection (Phase 4)
+
+The baseline detector is left unchanged and each method is applied to its
+input. The setting was chosen on the validation split (best mean mAP50 over
+clean and the three fog levels: non-local means with strength 3 × the
+estimated noise) and then scored once on test. Test mAP50:
+
+| Enhancement | Clean | Light | Medium | Heavy |
+|---|---|---|---|---|
+| None | 0.866 | 0.070 | 0.022 | 0.019 |
+| Denoise (NLM, k=3) | 0.835 | **0.348** | 0.019 | 0.003 |
+| Median 3×3 | 0.853 | 0.102 | 0.036 | 0.013 |
+| CLAHE | 0.844 | 0.051 | 0.018 | 0.013 |
+| Gamma 2.2 | 0.776 | 0.016 | 0.008 | 0.000 |
+| Multi-scale Retinex | 0.358 | 0.002 | 0.004 | 0.000 |
+| Classical brightening pipeline | 0.068 | 0.071 | 0.005 | 0.001 |
+| Histogram equalisation | 0.016 | 0.005 | 0.000 | 0.000 |
+
+- Denoising multiplies light-fog mAP50 by about 5. Nothing helps at medium or
+  heavy fog: too little star signal is left for this detector.
+- Brightening methods (pipeline, Retinex, histogram equalisation) hurt even on
+  clean images. They push the frames far from the dark images the detector
+  was trained on.
+- Removing the fog background (sky-restore variants) also hurt on clean
+  images and lost to plain denoising. All runs, including the k sweep, are in
+  `results/constellation/phase4/`.
+
+![Enhancement examples](results/constellation/phase4/figures/enhancement_examples.jpg)
+
+## Demo page
+
+Pick a test image, a fog level and an enhancement, and see the detector's
+boxes next to the true labels, plus the measured results table.
+
+```bash
+.venv-det/bin/pip install -r requirements-detection.txt
+.venv-det/bin/uvicorn src.app.server:app --port 8000   # open http://localhost:8000
+```
+
+It needs the re-split dataset in `data/raw/constellations/resplit`. Fogged
+images are read from `data/raw/constellations/fog` when present, otherwise
+they are made on the fly.
 
 ## Fog and low-light simulator
 
@@ -77,7 +120,8 @@ Evaluate a model on one test set:
 
 ## Layout
 
-- `src/constellation/`: dataset checks, re-split, training, evaluation, fog simulator
+- `src/constellation/`: dataset checks, re-split, training, evaluation, fog simulator, enhancement
+- `src/app/`: demo page (FastAPI + one HTML file)
 - `src/classical/`, `src/pipeline/`: classical enhancement operators (CLAHE,
   Retinex, gamma, homomorphic filtering, denoising) used in Phase 4
 - `colab/`: notebooks for GPU training

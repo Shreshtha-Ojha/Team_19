@@ -1,0 +1,99 @@
+{
+  "weights": "results/constellation/phase2/baseline/weights/best.pt",
+  "weights_sha256": "ee0dd80f5d841d2b7f29e40f11e35a12aa60ca4c2ddc512818eae5b811ae9827",
+  "data": "data/raw/constellations/enh/valid/sky_k3_b61_g1/clean/data.yaml",
+  "split": "val",
+  "only_regex": null,
+  "n_images": 97,
+  "n_instances": 308,
+  "mAP50": 0.6579677061412468,
+  "mAP50_95": 0.3732365558289986,
+  "precision": 0.8294653814899074,
+  "recall": 0.6153179189301108,
+  "per_class": {
+    "aquila": {
+      "instances": 18,
+      "ap50": 0.9416666666666667,
+      "ap50_95": 0.5882035714285714
+    },
+    "bootes": {
+      "instances": 18,
+      "ap50": 0.995,
+      "ap50_95": 0.6595487179487179
+    },
+    "canis_major": {
+      "instances": 14,
+      "ap50": 0.995,
+      "ap50_95": 0.6781457875457876
+    },
+    "canis_minor": {
+      "instances": 14,
+      "ap50": 0.995,
+      "ap50_95": 0.4789636363636364
+    },
+    "cassiopeia": {
+      "instances": 32,
+      "ap50": 0.14905476006191948,
+      "ap50_95": 0.08177139232886137
+    },
+    "cygnus": {
+      "instances": 31,
+      "ap50": 0.3647362470862471,
+      "ap50_95": 0.2601650815850816
+    },
+    "gemini": {
+      "instances": 14,
+      "ap50": 0.271,
+      "ap50_95": 0.20436666666666667
+    },
+    "leo": {
+      "instances": 6,
+      "ap50": 0.995,
+      "ap50_95": 0.48725000000000007
+    },
+    "lyra": {
+      "instances": 24,
+      "ap50": 0.995,
+      "ap50_95": 0.48186762346687984
+    },
+    "moon": {
+      "instances": 11,
+      "ap50": 0.2786887501908688,
+      "ap50_95": 0.0366865906886687
+    },
+    "orion": {
+      "instances": 19,
+      "ap50": 0.929,
+      "ap50_95": 0.5713410353535353
+    },
+    "pleiades": {
+      "instances": 31,
+      "ap50": 0.2100035409209119,
+      "ap50_95": 0.08000604731030987
+    },
+    "sagittarius": {
+      "instances": 12,
+      "ap50": 0.1383333333333333,
+      "ap50_95": 0.06166666666666666
+    },
+    "scorpius": {
+      "instances": 18,
+      "ap50": 0.28,
+      "ap50_95": 0.11829166666666668
+    },
+    "taurus": {
+      "instances": 14,
+      "ap50": 0.995,
+      "ap50_95": 0.5607401265401266
+    },
+    "ursa_major": {
+      "instances": 32,
+      "ap50": 0.995,
+      "ap50_95": 0.6227702827038017
+    }
+  },
+  "imgsz": 640,
+  "ultralytics": "8.4.210",
+  "torch": "2.14.1+cpu",
+  "gpu": null
+}

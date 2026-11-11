@@ -1,0 +1,7 @@
+{
+  "criterion": "mean validation mAP50 over clean, light, medium, heavy (97 images each), baseline weights unchanged",
+  "selected": "nlm_k3",
+  "selected_valid_mean_mAP50": 0.356,
+  "best_sky_restore": "sky_k3_b61_g1",
+  "note": "nlm_k4-k6 were added after the first sweep because k3 was at the edge of the grid; k3 stayed best. Chosen before any test-split run of Phase 4."
+}

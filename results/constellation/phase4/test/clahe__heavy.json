@@ -1,0 +1,99 @@
+{
+  "weights": "results/constellation/phase2/baseline/weights/best.pt",
+  "weights_sha256": "ee0dd80f5d841d2b7f29e40f11e35a12aa60ca4c2ddc512818eae5b811ae9827",
+  "data": "data/raw/constellations/enh/test/clahe/heavy/data.yaml",
+  "split": "test",
+  "only_regex": null,
+  "n_images": 92,
+  "n_instances": 283,
+  "mAP50": 0.013489583333333334,
+  "mAP50_95": 0.002294661458333333,
+  "precision": 0.01,
+  "recall": 0.027777777777777776,
+  "per_class": {
+    "aquila": {
+      "instances": 12,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "bootes": {
+      "instances": 12,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "canis_major": {
+      "instances": 18,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "canis_minor": {
+      "instances": 18,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "cassiopeia": {
+      "instances": 31,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "cygnus": {
+      "instances": 17,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "gemini": {
+      "instances": 18,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "leo": {
+      "instances": 18,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "lyra": {
+      "instances": 19,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "moon": {
+      "instances": 9,
+      "ap50": 0.21583333333333335,
+      "ap50_95": 0.036714583333333335
+    },
+    "orion": {
+      "instances": 23,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "pleiades": {
+      "instances": 35,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "sagittarius": {
+      "instances": 6,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "scorpius": {
+      "instances": 6,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "taurus": {
+      "instances": 22,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    },
+    "ursa_major": {
+      "instances": 19,
+      "ap50": 0.0,
+      "ap50_95": 0.0
+    }
+  },
+  "imgsz": 640,
+  "ultralytics": "8.4.210",
+  "torch": "2.14.1+cpu",
+  "gpu": null
+}

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Constellations in Fog</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='9' cy='10' r='2' fill='%23ffd98a'/><circle cx='22' cy='8' r='2' fill='%23ffd98a'/><circle cx='16' cy='20' r='2.4' fill='%23ffd98a'/><circle cx='25' cy='24' r='1.6' fill='%23ffd98a'/></svg>">
+<style>
+  :root {
+    --bg: #0a0c14; --card: #141828; --line: #262c44; --text: #eef0f7; --muted: #98a0b9;
+    --accent: #ffc94d; --ok: #5fdc8a; --bad: #ff7b7b; --det: #ffc800; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: radial-gradient(1000px 500px at 50% -150px, #1b2140, transparent 70%), var(--bg);
+    color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 0 16px 60px; }
+  header { padding: 36px 0 18px; }
+  h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.02em; }
+  .lede { margin: 0; color: var(--muted); max-width: 720px; }
+
+  .controls {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px;
+    margin: 18px 0;
+  }
+  .ctl label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin-bottom: 6px; }
+  .row { display: flex; gap: 6px; }
+  select, button { font: inherit; color: var(--text); background: #0f1220; border: 1px solid var(--line);
+    border-radius: 9px; padding: 8px 10px; }
+  select { flex: 1; min-width: 0; }
+  button { cursor: pointer; }
+  button:hover { border-color: #3a4366; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #1a1405; border-color: var(--accent);
+    font-weight: 600; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  .panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 860px) { .panels { grid-template-columns: 1fr; } }
+  figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    overflow: hidden; }
+  figure img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #000; }
+  figcaption { padding: 10px 12px; font-size: 14px; }
+  figcaption b { display: block; }
+  figcaption span { color: var(--muted); font-size: 13px; }
+  .busy figure img { opacity: .45; transition: opacity .2s; }
+
+  .verdict { margin: 16px 0; padding: 14px 16px; border-radius: var(--radius); border: 1px solid var(--line);
+    background: var(--card); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { padding: 3px 10px; border-radius: 999px; font-size: 13px; border: 1px solid var(--line); }
+  .chip.ok { border-color: var(--ok); color: var(--ok); }
+  .chip.bad { border-color: var(--bad); color: var(--bad); }
+  .chip.miss { border-style: dashed; color: var(--muted); }
+
+  h2 { font-size: 18px; margin: 30px 0 8px; }
+  .note { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; background: var(--card); border-radius: var(--radius);
+    overflow: hidden; border: 1px solid var(--line); }
+  th, td { padding: 9px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  td.best { color: var(--accent); font-weight: 700; }
+  .err { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Constellations in fog</h1>
+    <p class="lede">Pick a night-sky test image, add simulated fog and low light, clean it up, and see which
+      constellations the YOLOv8n detector still finds.</p>
+  </header>
+
+  <section class="controls" aria-label="Controls">
+    <div class="ctl">
+      <label for="image">Test image</label>
+      <div class="row">
+        <button id="prev" title="Previous image">‹</button>
+        <select id="image"></select>
+        <button id="next" title="Next image">›</button>
+        <button id="random" title="Random image">⟳</button>
+      </div>
+    </div>
+    <div class="ctl"><label>Fog + low light</label><div class="seg" id="fog"></div></div>
+    <div class="ctl"><label>Enhancement</label><div class="seg" id="method"></div></div>
+    <div class="ctl">
+      <label for="gain">Screen brightness <span id="gainv"></span></label>
+      <input id="gain" type="range" min="1" max="8" step="0.5" value="3">
+      <p class="note">Only brightens what you see. The detector gets the real image.</p>
+    </div>
+  </section>
+
+  <div id="panels" class="panels">
+    <figure><img id="img-clean" alt="Clean image with labelled constellations">
+      <figcaption><b>Clean + true labels</b><span>Green boxes: what is really there</span></figcaption></figure>
+    <figure><img id="img-degraded" alt="Image after fog and low light">
+      <figcaption><b id="cap-degraded">After fog</b><span>What the camera would record</span></figcaption></figure>
+    <figure><img id="img-result" alt="Enhanced image with detections">
+      <figcaption><b id="cap-result">Enhanced + detections</b><span>Yellow boxes: what the detector found</span></figcaption></figure>
+  </div>
+
+  <div class="verdict" id="verdict" aria-live="polite">Loading…</div>
+
+  <h2>Measured results (all 92 test images)</h2>
+  <div class="table-wrap"><table id="results"></table></div>
+  <p class="note">mAP50: share of constellations found with a well-placed box (1.0 = perfect). Same detector in
+    every row; only the image processing in front of it changes.</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const state = { image: null, fog: "light", method: "nlm_k3" };
+let images = [], token = 0;
+
+function seg(el, items, key) {
+  el.innerHTML = "";
+  for (const [value, label] of items) {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(state[key] === value));
+    b.onclick = () => { state[key] = value; seg(el, items, key); run(); };
+    el.appendChild(b);
+  }
+}
+
+function pretty(name) {
+  return name.replace(/_png_jpg.*$/, "").replace(/-00-00-00-[ns]$/, "").replace(/_/g, " ");
+}
+
+async function run() {
+  const my = ++token;
+  $("panels").classList.add("busy");
+  const q = new URLSearchParams({ ...state, gain: $("gain").value });
+  try {
+    const r = await fetch("/api/run?" + q);
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    if (my !== token) return;
+    $("img-clean").src = d.clean;
+    $("img-degraded").src = d.degraded;
+    $("img-result").src = d.result;
+    $("cap-degraded").textContent = state.fog === "clean" ? "No fog" : `After ${state.fog} fog`;
+    $("cap-result").textContent = `${document.querySelector("#method [aria-pressed=true]").textContent} + detections`;
+    const chips = d.detections.map(x =>
+      `<span class="chip ${x.correct ? "ok" : "bad"}">${x.correct ? "✓" : "✗"} ${x.cls} ${x.conf.toFixed(2)}</span>`)
+      .concat(d.missed.map(c => `<span class="chip miss">missed: ${c}</span>`));
+    $("verdict").innerHTML = `<b>Found ${d.n_found} of ${d.n_true} labelled constellations.</b>` +
+      ` ✓ right constellation in the right place, ✗ wrong constellation or wrong place.<div class="chips">${chips.join("") || "<span class='chip miss'>no detections</span>"}</div>`;
+  } catch (e) {
+    $("verdict").innerHTML = `<span class="err">Something went wrong: ${e.message}</span>`;
+  } finally {
+    if (my === token) $("panels").classList.remove("busy");
+  }
+}
+
+function step(delta) {
+  const i = (images.indexOf(state.image) + delta + images.length) % images.length;
+  state.image = images[i]; $("image").value = state.image; run();
+}
+
+async function loadResults() {
+  const d = await (await fetch("/api/results")).json();
+  const best = {};
+  for (const l of d.levels) best[l] = Math.max(...d.rows.map(r => r[l]));
+  $("results").innerHTML = `<tr><th>Enhancement</th>${d.levels.map(l => `<th>${l}</th>`).join("")}</tr>` +
+    d.rows.map(r => `<tr><td>${r.method}</td>${d.levels.map(l =>
+      `<td class="${r[l] === best[l] && d.rows.length > 1 ? "best" : ""}">${r[l].toFixed(3)}</td>`).join("")}</tr>`).join("");
+}
+
+(async () => {
+  const o = await (await fetch("/api/options")).json();
+  images = o.images;
+  $("image").innerHTML = images.map(n => `<option value="${n}">${pretty(n)}</option>`).join("");
+  state.image = images[0];
+  seg($("fog"), o.fog.map(f => [f, f]), "fog");
+  seg($("method"), Object.entries(o.methods), "method");
+  $("image").onchange = (e) => { state.image = e.target.value; run(); };
+  $("prev").onclick = () => step(-1);
+  $("next").onclick = () => step(1);
+  $("random").onclick = () => step(1 + Math.floor(Math.random() * (images.length - 1)));
+  const g = $("gain"); $("gainv").textContent = `×${g.value}`;
+  g.oninput = () => { $("gainv").textContent = `×${g.value}`; };
+  g.onchange = run;
+  run(); loadResults();
+})();
+</script>
+</body>
+</html>
