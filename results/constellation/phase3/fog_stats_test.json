@@ -1,0 +1,56 @@
+{
+  "split": "test",
+  "n_images": 92,
+  "detector": {
+    "k": 5.0,
+    "min_amp": 4.0,
+    "clean_min_amp": 20.0,
+    "match_px": 3.0,
+    "chance_offset": [
+      37,
+      23
+    ]
+  },
+  "clean_mean_grey": 10.751248009723167,
+  "severities": {
+    "light": {
+      "star_retention": 0.9574652360102006,
+      "chance_retention": 0.3334456045806669,
+      "retention_above_chance": 0.6240196314295338,
+      "star_retention_in_boxes": 0.9787390029325513,
+      "chance_retention_in_boxes": 0.43548387096774194,
+      "retention_above_chance_in_boxes": 0.5432551319648093,
+      "stars_clean": 20783,
+      "stars_clean_in_boxes": 2728,
+      "mean_grey": 11.353457482379415,
+      "bg_noise_sd": 2.8523934276207634,
+      "psnr_db": 32.30702749786627
+    },
+    "medium": {
+      "star_retention": 0.8388586825771063,
+      "chance_retention": 0.44454602319203196,
+      "retention_above_chance": 0.3943126593850743,
+      "star_retention_in_boxes": 0.9299853372434017,
+      "chance_retention_in_boxes": 0.5553519061583577,
+      "retention_above_chance_in_boxes": 0.374633431085044,
+      "stars_clean": 20783,
+      "stars_clean_in_boxes": 2728,
+      "mean_grey": 14.973948311183765,
+      "bg_noise_sd": 4.2866475374802295,
+      "psnr_db": 27.419746139206108
+    },
+    "heavy": {
+      "star_retention": 0.7271808689794543,
+      "chance_retention": 0.5574267430111148,
+      "retention_above_chance": 0.1697541259683395,
+      "star_retention_in_boxes": 0.8247800586510264,
+      "chance_retention_in_boxes": 0.6198680351906158,
+      "retention_above_chance_in_boxes": 0.20491202346041057,
+      "stars_clean": 20783,
+      "stars_clean_in_boxes": 2728,
+      "mean_grey": 16.503193677819294,
+      "bg_noise_sd": 4.4477996826171875,
+      "psnr_db": 25.3313194124598
+    }
+  }
+}

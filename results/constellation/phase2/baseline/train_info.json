@@ -1,0 +1,17 @@
+{
+  "name": "baseline",
+  "model": "yolov8n.pt",
+  "data": "/content/data/data.yaml",
+  "data_yaml_sha256": "4650b7e354c06b7db517a0c43a725e75e8e33d50fff6707ff8a41f3df82bde54",
+  "epochs": 100,
+  "imgsz": 640,
+  "batch": 16,
+  "seed": 0,
+  "patience": 0,
+  "resumed": false,
+  "seconds_this_session": 4636.3,
+  "best_sha256": "ee0dd80f5d841d2b7f29e40f11e35a12aa60ca4c2ddc512818eae5b811ae9827",
+  "ultralytics": "8.4.210",
+  "torch": "2.14.1+cu130",
+  "gpu": "Tesla T4"
+}

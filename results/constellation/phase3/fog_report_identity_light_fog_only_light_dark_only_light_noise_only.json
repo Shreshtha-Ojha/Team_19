@@ -1,0 +1,79 @@
+{
+  "seed": 0,
+  "jpeg_quality": 95,
+  "src": "data/raw/constellations/resplit",
+  "severities": {
+    "identity": {
+      "params": {
+        "beta": 0.0,
+        "patch": 0.0,
+        "airlight": 0.0,
+        "blur": 0.0,
+        "glow": 0.0,
+        "glow_sigma": 1.0,
+        "exposure": 1.0,
+        "full_well": 1000000000.0,
+        "read_noise": 0.0
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    },
+    "light_fog_only": {
+      "params": {
+        "beta": 0.4,
+        "patch": 0.3,
+        "airlight": 0.01,
+        "blur": 0.6,
+        "glow": 0.15,
+        "glow_sigma": 12,
+        "exposure": 1.0,
+        "full_well": 1000000000.0,
+        "read_noise": 0.0
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    },
+    "light_dark_only": {
+      "params": {
+        "beta": 0.0,
+        "patch": 0.0,
+        "airlight": 0.0,
+        "blur": 0.0,
+        "glow": 0.0,
+        "glow_sigma": 1.0,
+        "exposure": 0.6,
+        "full_well": 1000000000.0,
+        "read_noise": 0.0
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    },
+    "light_noise_only": {
+      "params": {
+        "beta": 0.0,
+        "patch": 0.0,
+        "airlight": 0.0,
+        "blur": 0.0,
+        "glow": 0.0,
+        "glow_sigma": 1.0,
+        "exposure": 1.0,
+        "full_well": 4000,
+        "read_noise": 0.001
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    }
+  }
+}

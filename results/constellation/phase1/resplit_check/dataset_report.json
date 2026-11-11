@@ -1,0 +1,225 @@
+{
+  "root": "data/raw/constellations/resplit",
+  "n_classes": 16,
+  "classes": [
+    "aquila",
+    "bootes",
+    "canis_major",
+    "canis_minor",
+    "cassiopeia",
+    "cygnus",
+    "gemini",
+    "leo",
+    "lyra",
+    "moon",
+    "orion",
+    "pleiades",
+    "sagittarius",
+    "scorpius",
+    "taurus",
+    "ursa_major"
+  ],
+  "splits": {
+    "train": {
+      "images": 3294,
+      "labels_missing": [],
+      "labels_orphan": [],
+      "unreadable": [],
+      "empty_label_images": 0,
+      "problems": [],
+      "instances": {
+        "aquila": 453,
+        "bootes": 515,
+        "canis_major": 363,
+        "canis_minor": 488,
+        "cassiopeia": 1028,
+        "cygnus": 672,
+        "gemini": 549,
+        "leo": 519,
+        "lyra": 752,
+        "moon": 890,
+        "orion": 709,
+        "pleiades": 857,
+        "sagittarius": 345,
+        "scorpius": 368,
+        "taurus": 523,
+        "ursa_major": 759
+      },
+      "annotation_kinds": {
+        "box": 9790
+      },
+      "sizes": {
+        "640x640": 3294
+      },
+      "boxes_per_image": {
+        "1": 1281,
+        "2": 530,
+        "3": 291,
+        "4": 340,
+        "5": 220,
+        "6": 399,
+        "7": 142,
+        "8": 91
+      },
+      "unique_source_stems": 544,
+      "images_that_are_extra_copies": 2750,
+      "box_area_fraction_percentiles": {
+        "5": 0.00147216796875,
+        "50": 0.024595947265625,
+        "95": 0.07117883300781248
+      },
+      "mean_gray_percentiles": {
+        "5": 5.8236279296875,
+        "50": 9.10763427734375,
+        "95": 37.58605224609375
+      },
+      "n_problems": 0
+    },
+    "valid": {
+      "images": 97,
+      "labels_missing": [],
+      "labels_orphan": [],
+      "unreadable": [],
+      "empty_label_images": 0,
+      "problems": [],
+      "instances": {
+        "aquila": 18,
+        "bootes": 18,
+        "canis_major": 14,
+        "canis_minor": 14,
+        "cassiopeia": 32,
+        "cygnus": 31,
+        "gemini": 14,
+        "leo": 6,
+        "lyra": 24,
+        "moon": 11,
+        "orion": 19,
+        "pleiades": 31,
+        "sagittarius": 12,
+        "scorpius": 18,
+        "taurus": 14,
+        "ursa_major": 32
+      },
+      "annotation_kinds": {
+        "box": 308
+      },
+      "sizes": {
+        "640x640": 97
+      },
+      "boxes_per_image": {
+        "1": 27,
+        "2": 18,
+        "3": 20,
+        "4": 6,
+        "5": 1,
+        "6": 19,
+        "7": 6
+      },
+      "unique_source_stems": 97,
+      "images_that_are_extra_copies": 0,
+      "box_area_fraction_percentiles": {
+        "5": 0.0011639404296875,
+        "50": 0.026707763671875002,
+        "95": 0.07340466308593749
+      },
+      "mean_gray_percentiles": {
+        "5": 3.67708349609375,
+        "50": 8.13385986328125,
+        "95": 19.583938476562324
+      },
+      "n_problems": 0
+    },
+    "test": {
+      "images": 92,
+      "labels_missing": [],
+      "labels_orphan": [],
+      "unreadable": [],
+      "empty_label_images": 0,
+      "problems": [],
+      "instances": {
+        "aquila": 12,
+        "bootes": 12,
+        "canis_major": 18,
+        "canis_minor": 18,
+        "cassiopeia": 31,
+        "cygnus": 17,
+        "gemini": 18,
+        "leo": 18,
+        "lyra": 19,
+        "moon": 9,
+        "orion": 23,
+        "pleiades": 35,
+        "sagittarius": 6,
+        "scorpius": 6,
+        "taurus": 22,
+        "ursa_major": 19
+      },
+      "annotation_kinds": {
+        "box": 283
+      },
+      "sizes": {
+        "640x640": 92
+      },
+      "boxes_per_image": {
+        "1": 28,
+        "2": 23,
+        "3": 11,
+        "4": 6,
+        "5": 5,
+        "6": 6,
+        "7": 13
+      },
+      "unique_source_stems": 92,
+      "images_that_are_extra_copies": 0,
+      "box_area_fraction_percentiles": {
+        "5": 0.00123193359375,
+        "50": 0.0211376953125,
+        "95": 0.061216064453124996
+      },
+      "mean_gray_percentiles": {
+        "5": 6.5357425537109375,
+        "50": 8.237764892578125,
+        "95": 28.58314855957031
+      },
+      "n_problems": 0
+    }
+  },
+  "total_images": 3483,
+  "instances_total": {
+    "aquila": 483,
+    "bootes": 545,
+    "canis_major": 395,
+    "canis_minor": 520,
+    "cassiopeia": 1091,
+    "cygnus": 720,
+    "gemini": 581,
+    "leo": 543,
+    "lyra": 795,
+    "moon": 910,
+    "orion": 751,
+    "pleiades": 923,
+    "sagittarius": 363,
+    "scorpius": 392,
+    "taurus": 559,
+    "ursa_major": 810
+  },
+  "classes_without_instances": [],
+  "leakage": {
+    "train_vs_valid": {
+      "shared_source_stems": 0,
+      "valid_images_within_hamming_4": 16
+    },
+    "train_vs_test": {
+      "shared_source_stems": 0,
+      "test_images_within_hamming_4": 15
+    },
+    "valid_vs_test": {
+      "shared_source_stems": 0,
+      "test_images_within_hamming_4": 5
+    }
+  },
+  "readme_excerpts": {
+    "README.dataset.txt": "# Constellation detector > 2023-12-12 8:57pm\nhttps://universe.roboflow.com/course-work-cytun/constellation-detector\n\nProvided by a Roboflow user\nLicense: Public Domain\n\n",
+    "README.roboflow.txt": "\nConstellation detector - v1 2023-12-12 8:57pm\n==============================\n\nThis dataset was exported via roboflow.com on December 12, 2023 at 6:06 PM GMT\n\nRoboflow is an end-to-end computer vision platform that helps you\n* collaborate with your team on computer vision projects\n* collect & organize images\n* understand and search unstructured image data\n* annotate, and create datasets\n* export, train, and deploy computer vision models\n* use active learning to improve your dataset over time\n\nFor state of the art Computer Vision training notebooks you can use with this dataset,\nvisit https://github.com/roboflow/notebooks\n\nTo find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com\n\nThe dataset includes 5561 images.\nConstellations are annotated in YOLOv8 format.\n\nThe following pre-processing was applied to each image:\n* Auto-orientation of pixel data (with EXIF-orientation stripping)\n* Resize to 640x640 (Stretch)\n* Grayscale (CRT phosphor)\n\nThe following augmentation was applied to create 3 versions of each source image:\n\nThe following transformations were applied to the bounding boxes of each image:\n* Random Gaussian blur of between 0 and 2.5 pixels\n\n\n"
+  }
+}

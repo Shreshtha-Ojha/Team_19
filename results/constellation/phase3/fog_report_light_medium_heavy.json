@@ -1,0 +1,61 @@
+{
+  "seed": 0,
+  "jpeg_quality": 95,
+  "src": "data/raw/constellations/resplit",
+  "severities": {
+    "light": {
+      "params": {
+        "beta": 0.4,
+        "patch": 0.3,
+        "airlight": 0.01,
+        "blur": 0.6,
+        "glow": 0.15,
+        "glow_sigma": 12,
+        "exposure": 0.6,
+        "full_well": 4000,
+        "read_noise": 0.001
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    },
+    "medium": {
+      "params": {
+        "beta": 0.9,
+        "patch": 0.4,
+        "airlight": 0.018,
+        "blur": 1.0,
+        "glow": 0.2,
+        "glow_sigma": 16,
+        "exposure": 0.4,
+        "full_well": 2000,
+        "read_noise": 0.0015
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    },
+    "heavy": {
+      "params": {
+        "beta": 1.6,
+        "patch": 0.5,
+        "airlight": 0.028,
+        "blur": 1.5,
+        "glow": 0.25,
+        "glow_sigma": 20,
+        "exposure": 0.25,
+        "full_well": 1000,
+        "read_noise": 0.002
+      },
+      "splits": {
+        "test": {
+          "images": 92
+        }
+      }
+    }
+  }
+}
