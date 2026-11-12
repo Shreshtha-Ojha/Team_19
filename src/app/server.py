@@ -1,7 +1,7 @@
 """Local demo: pick a test image, add fog, and see what the fog-trained detector finds.
 
 Run from the repository root with the detection environment:
-  .venv-det/bin/uvicorn src.app.server:app --port 8000
+  uvicorn src.app.server:app --port 8000
 then open http://localhost:8000
 """
 import base64

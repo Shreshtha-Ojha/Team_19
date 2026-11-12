@@ -6,7 +6,7 @@ frames are brightened by up to --gain (never past a mean grey of 40, so
 already-bright outputs are not blown out); the detector sees the images
 without that gain.
 
-  .venv-det/bin/python -m src.constellation.phase4_figure --image 2022-02-02
+  python -m src.constellation.phase4_figure --image 2022-02-02
 """
 import argparse
 import sys

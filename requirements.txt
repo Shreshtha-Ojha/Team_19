@@ -1,6 +1,7 @@
-# Image processing: fog simulator, enhancement, statistics (src/constellation,
-# src/classical, src/pipeline). Detection (training and evaluation) also needs
-# requirements-detection.txt, installed in a separate environment.
-numpy==2.5.4
-opencv-python-headless==5.0.0.93
+# Install torch first (CPU build is enough for evaluation and the demo; training ran on Colab):
+#   pip install torch==2.14.1 torchvision --index-url https://download.pytorch.org/whl/cpu
+# Ultralytics pulls in opencv-python and numpy. fastapi and uvicorn run the demo page (src/app).
+ultralytics==8.4.210
 pyyaml==6.0.3
+fastapi==0.148.0
+uvicorn==0.54.0

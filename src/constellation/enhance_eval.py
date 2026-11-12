@@ -11,7 +11,7 @@ Protocol: run with --split valid over all methods to choose settings, then
 with --split test only for the methods being reported.
 
 Run with the detection environment, from the repository root:
-  .venv-det/bin/python -m src.constellation.enhance_eval --split valid \
+  python -m src.constellation.enhance_eval --split valid \
       --out results/constellation/phase4/valid
 """
 import argparse

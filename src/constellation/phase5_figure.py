@@ -6,7 +6,7 @@ detector's boxes. Images are picked by a fixed rule (every --step-th test
 image in name order), not by how good the result looks. Display gain as in
 phase4_figure.py; the detectors see the images without it.
 
-  .venv-det/bin/python -m src.constellation.phase5_figure
+  python -m src.constellation.phase5_figure
 """
 import argparse
 import sys

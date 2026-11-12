@@ -5,10 +5,10 @@ be put in front of the unchanged baseline detector.
 
 Two groups:
   generic  - course operators used as they are: gamma, global histogram
-             equalisation, CLAHE, multi-scale Retinex, and the six-stage
-             low-light pipeline in src/pipeline (Retinex illumination map +
-             adaptive gamma + NLM + CLAHE + colour). These brighten for a
-             human viewer.
+             equalisation, CLAHE, multi-scale Retinex, and a five-stage
+             low-light brightening pipeline (Retinex illumination map +
+             adaptive gamma + NLM + CLAHE + colour), all in classical.py.
+             These brighten for a human viewer.
   sky      - methods aimed at undoing the fog + low-light model instead:
              non-local means denoising with strength set from the image's own
              estimated noise, removal of the fog background (airlight and
@@ -17,22 +17,11 @@ Two groups:
 The baseline was trained on dark, noise-free sky images, so the sky methods
 try to bring a degraded image back towards that look, not to brighten it.
 """
-import sys
-from pathlib import Path
-
 import cv2
 import numpy as np
 
-_SRC = Path(__file__).resolve().parents[1]
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
-
-from classical.clahe import clahe_enhance  # noqa: E402
-from classical.gamma import gamma_correct  # noqa: E402
-from classical.hist_eq import hist_eq  # noqa: E402
-from classical.retinex import multi_scale_retinex  # noqa: E402
-from pipeline.pipeline import enhance as pipeline_enhance  # noqa: E402
-from pipeline.stages import estimate_noise  # noqa: E402
+from src.constellation.classical import (brighten_pipeline, clahe_enhance, estimate_noise,
+                                         gamma_correct, hist_eq, multi_scale_retinex)
 
 
 def noise_sigma(img: np.ndarray) -> float:
@@ -72,10 +61,6 @@ def sky_restore(img: np.ndarray, k: float = 2.0, bg_ksize: int = 31, gain: float
     return np.clip(out + 0.5, 0, 255).astype(np.uint8)
 
 
-def _pipeline(img: np.ndarray) -> np.ndarray:
-    return pipeline_enhance(img, keep_steps=False).final
-
-
 METHODS = {
     "none": lambda im: im,
     # generic
@@ -83,7 +68,7 @@ METHODS = {
     "hist_eq": hist_eq,
     "clahe": lambda im: clahe_enhance(im, 2.0, 8),
     "msr": multi_scale_retinex,
-    "pipeline": _pipeline,
+    "pipeline": brighten_pipeline,
     # denoising only
     "median3": lambda im: cv2.medianBlur(im, 3),
     "nlm_k1": lambda im: nlm(im, 1.0),
