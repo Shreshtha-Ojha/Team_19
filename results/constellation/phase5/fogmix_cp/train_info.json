@@ -1,0 +1,17 @@
+{
+  "name": "fogmix_cp",
+  "model": "/content/drive/MyDrive/constellation/runs/fogmix_cp/weights/last.pt",
+  "data": "/content/phase5/fogmix_cp/data.yaml",
+  "data_yaml_sha256": "67f1123b75a2957ab6170c27623745e691dc9cddea96a8cca53ce140e2289d81",
+  "epochs": 50,
+  "imgsz": 640,
+  "batch": 16,
+  "seed": 0,
+  "patience": 0,
+  "resumed": true,
+  "seconds_this_session": 2194.2,
+  "best_sha256": "a36cf2da30f93454f4ed7daaa8230549d58cfc395a7a351104ce301d315be1c8",
+  "ultralytics": "8.4.210",
+  "torch": "2.14.1+cu130",
+  "gpu": "Tesla T4"
+}

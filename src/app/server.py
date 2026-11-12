@@ -1,4 +1,4 @@
-"""Local demo: pick a test image, add fog, enhance it, and see what the detector finds.
+"""Local demo: pick a test image, add fog, and see what the fog-trained detector finds.
 
 Run from the repository root with the detection environment:
   .venv-det/bin/uvicorn src.app.server:app --port 8000
@@ -21,11 +21,14 @@ from src.constellation.fog_sim import SEVERITIES, apply_fog, image_rng
 ROOT = Path(__file__).resolve().parents[2]
 CLEAN = ROOT / "data/raw/constellations/resplit/test"
 FOG = ROOT / "data/raw/constellations/fog"
-WEIGHTS = ROOT / "results/constellation/phase2/baseline/weights/best.pt"
+# The detector trained on fogged images (Phase 5, "fogmix").
+WEIGHTS = ROOT / "results/constellation/phase5/fogmix/weights/best.pt"
 RESULTS = ROOT / "results/constellation"
 NAMES = yaml.safe_load((ROOT / "data/raw/constellations/resplit/data.yaml").read_text())["names"]
 
-FOG_LEVELS = ["clean", *SEVERITIES]
+# Two modes only. "fog" is the simulator's medium severity.
+FOG_LEVEL = "medium"
+MODES = ["clean", "fog"]
 # The few methods worth showing; keys are entries of enhance.METHODS.
 SHOWN_METHODS = {
     "none": "No enhancement",
@@ -89,19 +92,19 @@ def index():
 
 @app.get("/api/options")
 def options():
-    return {"images": list(test_images()), "fog": FOG_LEVELS, "methods": SHOWN_METHODS}
+    return {"images": list(test_images()), "fog": MODES, "methods": SHOWN_METHODS}
 
 
 @app.get("/api/run")
-def run(image: str, fog: str = "light", method: str = "nlm_k3", gain: float = 3.0, conf: float = 0.25):
+def run(image: str, fog: str = "fog", method: str = "none", gain: float = 3.0, conf: float = 0.25):
     imgs = test_images()
-    if image not in imgs or fog not in FOG_LEVELS or method not in SHOWN_METHODS:
-        raise HTTPException(400, "unknown image, fog level or method")
+    if image not in imgs or fog not in MODES or method not in SHOWN_METHODS:
+        raise HTTPException(400, "unknown image, mode or method")
     gain = float(np.clip(gain, 1, 10))
     clean = cv2.imread(str(imgs[image]))
     h, w = clean.shape[:2]
     gt = ground_truth(image, w, h)
-    degraded = load_fogged(imgs[image], fog)
+    degraded = load_fogged(imgs[image], FOG_LEVEL if fog == "fog" else "clean")
     enhanced = METHODS[method](degraded)
     r = model().predict(enhanced, conf=conf, verbose=False, device="cpu")[0]
     dets = sorted(({"cls": NAMES[int(c)], "conf": float(s), "box": b, "correct": False}
@@ -138,13 +141,13 @@ def iou(a: list, b: list) -> float:
 
 @app.get("/api/results")
 def results():
-    """Saved test-split numbers (mAP50), so the page shows the measured results."""
-    p4 = RESULTS / "phase4/test/summary.json"
-    if p4.exists():
-        table = json.loads(p4.read_text())
-    else:  # Phase 4 not run yet: fall back to the Phase 3 baseline numbers
-        table = {"none": {lvl: json.loads((RESULTS / f"phase3/baseline_test_{lvl}.json").read_text())
-                          for lvl in FOG_LEVELS}}
-    rows = [{"method": SHOWN_METHODS[m], **{lvl: table[m][lvl]["mAP50"] for lvl in FOG_LEVELS}}
-            for m in SHOWN_METHODS if m in table]
-    return {"levels": FOG_LEVELS, "rows": rows}
+    """Saved test-split mAP50 for the original and the fog-trained detector."""
+    def m(path):
+        return json.loads((RESULTS / path).read_text())["mAP50"]
+    rows = [
+        {"method": "Original detector",
+         "clean": m("phase3/baseline_test_clean.json"), "fog": m(f"phase3/baseline_test_{FOG_LEVEL}.json")},
+        {"method": "Fog-trained detector",
+         "clean": m("phase5/fogmix_test_clean.json"), "fog": m(f"phase5/fogmix_test_{FOG_LEVEL}.json")},
+    ]
+    return {"levels": MODES, "rows": rows}

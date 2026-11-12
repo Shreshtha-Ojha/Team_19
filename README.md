@@ -15,7 +15,7 @@ All numbers below come from result files saved under `results/constellation/`.
 | 2 | YOLOv8n baseline (Colab T4) | done |
 | 3 | Fog + low-light simulator, baseline under fog | done |
 | 4 | Classical enhancement before detection | done |
-| 5 | Retrain with fog / fog + copy-paste | planned |
+| 5 | Retrain with fog / fog + copy-paste | done |
 | 6 | Results table, figures | planned |
 | 7 | Constellation stick figures | planned |
 
@@ -73,10 +73,28 @@ estimated noise) and then scored once on test. Test mAP50:
 
 ![Enhancement examples](results/constellation/phase4/figures/enhancement_examples.jpg)
 
+### Training with fog (Phase 5)
+
+The detector is retrained (50 epochs, Colab T4) on the same training images,
+each given a random condition: clean, light, medium or heavy fog. A second
+model also gets constellations copy-pasted from other training images. The
+test images are never used for training. Test mAP50:
+
+| Detector | Clean | Light | Medium | Heavy |
+|---|---|---|---|---|
+| Original | 0.866 | 0.070 | 0.022 | 0.019 |
+| Fog-trained | **0.869** | **0.849** | **0.833** | 0.697 |
+| Fog-trained + copy-paste | 0.865 | 0.847 | 0.799 | **0.714** |
+
+Training with fog fixes most of the drop and costs nothing on clean images.
+Copy-paste makes no clear difference on top (one run each). Results are in
+`results/constellation/phase5/`.
+
 ## Demo page
 
-Pick a test image, a fog level and an enhancement, and see the detector's
-boxes next to the true labels, plus the measured results table.
+Pick a test image, choose Clean or Fog (the medium setting), and see the
+fog-trained detector's boxes next to the true labels, plus the measured
+results.
 
 ```bash
 .venv-det/bin/pip install -r requirements-detection.txt

@@ -1,0 +1,17 @@
+{
+  "name": "fogmix",
+  "model": "yolov8n.pt",
+  "data": "/content/phase5/fogmix/data.yaml",
+  "data_yaml_sha256": "d756b2bdeca3f68720ad7556cfa420ab142361a0813c011f23e68c7e3999aaec",
+  "epochs": 50,
+  "imgsz": 640,
+  "batch": 16,
+  "seed": 0,
+  "patience": 0,
+  "resumed": false,
+  "seconds_this_session": 2468.2,
+  "best_sha256": "c9c45f0f186751bbbf7eafa7b0313ff9b67efefaf28a571cc5cf37cbd04e13ef",
+  "ultralytics": "8.4.210",
+  "torch": "2.14.1+cu130",
+  "gpu": "Tesla T4"
+}

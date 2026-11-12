@@ -77,8 +77,8 @@
 <main>
   <header>
     <h1>Constellations in fog</h1>
-    <p class="lede">Pick a night-sky test image, add simulated fog and low light, clean it up, and see which
-      constellations the YOLOv8n detector still finds.</p>
+    <p class="lede">Pick a night-sky test image, add simulated fog and low light, and see which constellations
+      our fog-trained YOLOv8n detector still finds.</p>
   </header>
 
   <section class="controls" aria-label="Controls">
@@ -91,7 +91,7 @@
         <button id="random" title="Random image">⟳</button>
       </div>
     </div>
-    <div class="ctl"><label>Fog + low light</label><div class="seg" id="fog"></div></div>
+    <div class="ctl"><label>Mode</label><div class="seg" id="fog"></div></div>
     <div class="ctl"><label>Enhancement</label><div class="seg" id="method"></div></div>
     <div class="ctl">
       <label for="gain">Screen brightness <span id="gainv"></span></label>
@@ -106,20 +106,20 @@
     <figure><img id="img-degraded" alt="Image after fog and low light">
       <figcaption><b id="cap-degraded">After fog</b><span>What the camera would record</span></figcaption></figure>
     <figure><img id="img-result" alt="Enhanced image with detections">
-      <figcaption><b id="cap-result">Enhanced + detections</b><span>Yellow boxes: what the detector found</span></figcaption></figure>
+      <figcaption><b id="cap-result">Detections</b><span>Yellow boxes: what the detector found</span></figcaption></figure>
   </div>
 
   <div class="verdict" id="verdict" aria-live="polite">Loading…</div>
 
   <h2>Measured results (all 92 test images)</h2>
   <div class="table-wrap"><table id="results"></table></div>
-  <p class="note">mAP50: share of constellations found with a well-placed box (1.0 = perfect). Same detector in
-    every row; only the image processing in front of it changes.</p>
+  <p class="note">mAP50: share of constellations found with a well-placed box (1.0 = perfect). The fog-trained
+    detector learned from fogged training images only; these test images were never used for training.</p>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const state = { image: null, fog: "light", method: "nlm_k3" };
+const state = { image: null, fog: "fog", method: "none" };
 let images = [], token = 0;
 
 function seg(el, items, key) {
@@ -149,7 +149,7 @@ async function run() {
     $("img-clean").src = d.clean;
     $("img-degraded").src = d.degraded;
     $("img-result").src = d.result;
-    $("cap-degraded").textContent = state.fog === "clean" ? "No fog" : `After ${state.fog} fog`;
+    $("cap-degraded").textContent = state.fog === "clean" ? "No fog" : "After fog";
     $("cap-result").textContent = `${document.querySelector("#method [aria-pressed=true]").textContent} + detections`;
     const chips = d.detections.map(x =>
       `<span class="chip ${x.correct ? "ok" : "bad"}">${x.correct ? "✓" : "✗"} ${x.cls} ${x.conf.toFixed(2)}</span>`)
@@ -172,7 +172,7 @@ async function loadResults() {
   const d = await (await fetch("/api/results")).json();
   const best = {};
   for (const l of d.levels) best[l] = Math.max(...d.rows.map(r => r[l]));
-  $("results").innerHTML = `<tr><th>Enhancement</th>${d.levels.map(l => `<th>${l}</th>`).join("")}</tr>` +
+  $("results").innerHTML = `<tr><th>Detector</th>${d.levels.map(l => `<th>${l}</th>`).join("")}</tr>` +
     d.rows.map(r => `<tr><td>${r.method}</td>${d.levels.map(l =>
       `<td class="${r[l] === best[l] && d.rows.length > 1 ? "best" : ""}">${r[l].toFixed(3)}</td>`).join("")}</tr>`).join("");
 }
@@ -182,7 +182,7 @@ async function loadResults() {
   images = o.images;
   $("image").innerHTML = images.map(n => `<option value="${n}">${pretty(n)}</option>`).join("");
   state.image = images[0];
-  seg($("fog"), o.fog.map(f => [f, f]), "fog");
+  seg($("fog"), o.fog.map(f => [f, f[0].toUpperCase() + f.slice(1)]), "fog");
   seg($("method"), Object.entries(o.methods), "method");
   $("image").onchange = (e) => { state.image = e.target.value; run(); };
   $("prev").onclick = () => step(-1);
